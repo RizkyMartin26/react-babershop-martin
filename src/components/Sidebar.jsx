@@ -1,56 +1,65 @@
-import { NavLink } from "react-router-dom";
+import { NavLink } from 'react-router-dom';
 import {
-  FaThLarge,
-  FaCut,
-  FaUserTie,
-  FaCalendarAlt,
-  FaExclamationTriangle,
-} from "react-icons/fa";
+  LayoutDashboard,
+  Calendar,
+  Scissors,
+  Award,
+  Users,
+  Settings
+} from 'lucide-react';
 
 export default function Sidebar() {
-
-  const menuClass = ({ isActive }) =>
-    `flex items-center gap-4 px-4 py-3 rounded-xl text-sm transition
-    ${
-      isActive
-        ? "bg-amber-500 text-slate-900 font-semibold"
-        : "text-slate-400 hover:bg-white/10 hover:text-white"
-    }`;
+  const menuItems = [
+    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/booking', icon: Calendar, label: 'Booking' },
+    { path: '/services', icon: Scissors, label: 'Services' },
+    { path: '/barbers', icon: Award, label: 'Barbers' },
+    { path: '/customers', icon: Users, label: 'Customers' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
+  ];
 
   return (
-    <aside className="h-full flex flex-col justify-between p-6 bg-[#1a1e26]">
+    <div className="w-64 fixed h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col shadow-xl z-20">
 
-      <div>
-
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-white">
-            Barber<span className="text-amber-500">Pro</span>
-          </h1>
-          <p className="text-xs text-slate-400">Barber Dashboard</p>
+      {/* LOGO */}
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-700">
+        <div className="bg-amber-500 p-2 rounded-lg">
+          <Scissors className="w-6 h-6 text-white" />
         </div>
-
-        <ul className="space-y-2">
-
-          <li><NavLink to="/" className={menuClass}><FaThLarge />Dashboard</NavLink></li>
-          <li><NavLink to="/services" className={menuClass}><FaCut />Services</NavLink></li>
-          <li><NavLink to="/barbers" className={menuClass}><FaUserTie />Barbers</NavLink></li>
-          <li><NavLink to="/booking" className={menuClass}><FaCalendarAlt />Booking</NavLink></li>
-
-          <li><NavLink to="/error-400" className={menuClass}><FaExclamationTriangle />Error 400</NavLink></li>
-          <li><NavLink to="/error-401" className={menuClass}><FaExclamationTriangle />Error 401</NavLink></li>
-          <li><NavLink to="/error-403" className={menuClass}><FaExclamationTriangle />Error 403</NavLink></li>
-
-        </ul>
-
+        <div>
+          <h1 className="font-bold text-lg">Elite Barber</h1>
+          <p className="text-xs text-gray-400">Premium Barbershop</p>
+        </div>
       </div>
 
-      <div className="bg-amber-500 p-4 rounded-xl text-black">
-        <p className="text-sm">Upgrade to premium</p>
-        <button className="mt-2 bg-black text-white px-3 py-1 rounded">
-          Upgrade
-        </button>
-      </div>
+      {/* MENU */}
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.path === '/'}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                isActive
+                  ? 'bg-amber-500 text-white font-semibold shadow-md'
+                  : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+              }`
+            }
+          >
+            <item.icon className="w-5 h-5" />
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
-    </aside>
+      {/* FOOTER */}
+      <div className="p-4 border-t border-gray-700">
+        <div className="bg-gray-700 rounded-xl p-3 text-xs">
+          <p className="text-gray-300 font-semibold">Jakarta, Indonesia</p>
+          <p className="text-gray-400">Open 09:00 - 21:00</p>
+        </div>
+      </div>
+    </div>
   );
 }

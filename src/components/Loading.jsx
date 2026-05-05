@@ -1,11 +1,7 @@
-function Loading() {
+export default function Loading() {
   return (
-    <div className="h-screen bg-black flex items-center justify-center">
-      <h1 className="text-4xl text-yellow-400 font-bold animate-pulse">
-        Loading...
-      </h1>
+    <div className="h-screen flex items-center justify-center">
+      <p className="text-xl">Loading...</p>
     </div>
   );
 }
-
-export default Loading;

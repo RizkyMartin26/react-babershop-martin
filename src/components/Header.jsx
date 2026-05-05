@@ -1,34 +1,42 @@
-import { FaSearch, FaBell } from "react-icons/fa";
+import { Bell, Search } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className="bg-white h-20 px-8 flex justify-between items-center border-b">
+    <header className="bg-white h-20 px-6 flex items-center justify-between border-b border-gray-200 shadow-sm">
 
-      <div className="relative w-[400px]">
+      {/* SEARCH */}
+      <div className="flex items-center w-full max-w-md relative">
+        <Search className="absolute left-4 text-gray-400 w-5 h-5" />
         <input
-          placeholder="Search barber services..."
-          className="w-full bg-gray-100 rounded-xl py-2 pl-4 pr-10 outline-none"
+          type="text"
+          placeholder="Search anything..."
+          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
-        <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* RIGHT */}
+      <div className="flex items-center gap-6">
 
-        <button className="bg-gray-100 p-2 rounded-xl">
-          <FaBell />
+        <button className="relative p-2 hover:bg-gray-100 rounded-full">
+          <Bell className="w-6 h-6 text-gray-600" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="text-right text-sm">
-            <p className="font-semibold">Admin</p>
-            <p className="text-gray-400 text-xs">Manager</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold">
+            AB
           </div>
-
-          <img src="https://i.pravatar.cc/100" className="w-10 h-10 rounded-xl" />
+          <div>
+            <p className="text-sm font-semibold text-gray-800">
+              Admin Barbershop
+            </p>
+            <p className="text-xs text-gray-500">
+              admin@barbershop.com
+            </p>
+          </div>
         </div>
 
       </div>
-
     </header>
   );
 }

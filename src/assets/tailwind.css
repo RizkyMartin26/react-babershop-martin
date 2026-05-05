@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* 1. Gunakan Font yang Lebih Modern (Inter/Poppins) */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* 2. Global Reset & Helper Classes */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 3. Perbaikan Sidebar & Card (Custom Utility) */
+@layer components {
+  /* Efek Glassmorphism untuk Sidebar atau Card */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+  }
+
+  /* Animasi Hover untuk Menu Dashboard */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-amber-500/10 hover:text-amber-600;
+  }
+
+  /* Tombol Premium supaya gak 'berantakan' */
+  .btn-premium {
+    @apply bg-gradient-to-r from-amber-400 to-amber-600 text-black font-bold py-3 px-6 rounded-2xl shadow-lg shadow-amber-500/30 hover:scale-[1.02] active:scale-95 transition-all;
+  }
+}
+
+/* 4. Fix Image & Button */
+img {
+  @apply max-w-full h-auto block;
+}
+
+button {
+  @apply active:opacity-80 transition-opacity;
+  cursor: pointer;
+  outline: none;
+}
+
+/* 5. Custom Scrollbar (Biar makin pro) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full hover:bg-slate-400;
+}

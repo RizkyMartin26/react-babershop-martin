@@ -10,6 +10,7 @@ import {
   Users,
   Settings,
   Package,
+  Component,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -49,6 +50,13 @@ export default function Sidebar() {
       path: "/customers",
       icon: Users,
       label: "Customers",
+    },
+
+    // NEW MENU
+    {
+      path: "/components",
+      icon: Component,
+      label: "Components",
     },
 
     {

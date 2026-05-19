@@ -14,6 +14,9 @@ import Services from "./pages/Services";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 
+// COMPONENT PAGE
+import Components from "./pages/Components";
+
 // PRODUCT
 import Product from "./pages/Product";
 import ProductDetail from "./pages/ProductDetail";
@@ -60,6 +63,12 @@ function App() {
         <Route
           path="customers"
           element={<Customers />}
+        />
+
+        {/* NEW COMPONENT PAGE */}
+        <Route
+          path="components"
+          element={<Components />}
         />
 
         <Route

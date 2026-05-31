@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 
+import CustomerTabs from "../components/ui/CustomerTabs";
+
 export default function Customers() {
 
   const initialCustomers = [

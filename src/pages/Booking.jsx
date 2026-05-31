@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { appointments } from "../data/mockData";
+import DialogDemo from "../components/ui/DialogDemo";
 
 export default function Booking() {
 
@@ -32,6 +33,8 @@ export default function Booking() {
 
   const [showCreateModal, setShowCreateModal] =
     useState(false);
+  const [showDialog, setShowDialog] =
+  useState(false);
 
   const emptyForm = {
     id: "",
@@ -156,9 +159,8 @@ export default function Booking() {
 
         <button
           onClick={() => {
-            setFormData(emptyForm);
-            setShowCreateModal(true);
-          }}
+          setShowDialog(true);
+            }}
           className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition flex items-center gap-2 shadow-lg"
         >
           <Plus className="w-5 h-5" />
@@ -549,7 +551,34 @@ export default function Booking() {
         </div>
 
       )}
+<DialogDemo
+  open={showDialog}
+  setOpen={setShowDialog}
+  title="Booking Dialog UI"
+>
 
+  <div className="space-y-4">
+
+    <p className="text-gray-500">
+      This component uses Radix UI Dialog.
+    </p>
+
+    <button
+      onClick={() => {
+        setShowDialog(false);
+
+        setFormData(emptyForm);
+
+        setShowCreateModal(true);
+      }}
+      className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold"
+    >
+      Continue Create Booking
+    </button>
+
+  </div>
+
+</DialogDemo>
     </>
   );
 }

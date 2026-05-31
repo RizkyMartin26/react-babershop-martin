@@ -9,6 +9,8 @@ import {
   X,
 } from "lucide-react";
 
+import ServiceAccordion from "../components/ui/ServiceAccordion";
+
 export default function Services() {
 
   const initialServices = [

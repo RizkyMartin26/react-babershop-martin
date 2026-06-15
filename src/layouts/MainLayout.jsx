@@ -1,8 +1,41 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { supabase } from '../supabase';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 export default function MainLayout() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/login');
+      } else {
+        setLoading(false);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
 

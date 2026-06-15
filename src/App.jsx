@@ -26,6 +26,12 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Forgot from "./pages/auth/Forgot";
 
+import Members from "./pages/Members";
+import Guest from "./pages/Guest";
+import Users from "./pages/Users"; 
+import Campaigns from "./pages/Campaigns";
+import Feedback from "./pages/Feedback";
+
 function App() {
   return (
     <Routes>
@@ -64,6 +70,27 @@ function App() {
           path="customers"
           element={<Customers />}
         />
+        <Route
+          path="members"
+          element={<Members />}
+        />
+
+        {/* CRM & PEMASARAN */}
+        <Route
+          path="campaigns"
+          element={<Campaigns />}
+        />
+        
+        <Route
+          path="feedback"
+          element={<Feedback />}
+        />
+
+        {/* NEW USER MANAGEMENT PAGE */}
+        <Route
+          path="users"
+          element={<Users />}
+        />
 
         {/* NEW COMPONENT PAGE */}
         <Route
@@ -77,6 +104,12 @@ function App() {
         />
 
       </Route>
+
+      {/* STANDALONE PUBLIC ROUTE OUTSIDE SIDEBAR */}
+      <Route
+        path="guest"
+        element={<Guest />}
+      />
 
       {/* AUTH */}
       <Route element={<AuthLayout />}>

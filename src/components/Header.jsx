@@ -1,6 +1,14 @@
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabase';
 
 export default function Header() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/guest');
+  };
   return (
     <header className="bg-white h-20 px-6 flex items-center justify-between border-b border-gray-200 shadow-sm">
 
@@ -35,6 +43,15 @@ export default function Header() {
             </p>
           </div>
         </div>
+
+        <button 
+          onClick={handleLogout} 
+          className="p-2 ml-4 hover:bg-red-50 text-red-500 rounded-xl transition-colors border border-transparent hover:border-red-100 flex items-center gap-2"
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm font-semibold hidden sm:inline">Logout</span>
+        </button>
 
       </div>
     </header>

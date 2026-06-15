@@ -1,8 +1,38 @@
-import { DollarSign, Calendar as CalendarIcon, UserCheck, Clock, TrendingUp, Plus, Eye, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+
+import {
+  DollarSign,
+  Calendar as CalendarIcon,
+  UserCheck,
+  Clock,
+  TrendingUp,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { revenueData, appointments } from '../data/mockData';
 
 export default function Dashboard() {
+  const [currentTime, setCurrentTime] =
+  useState(new Date());
+
+useEffect(() => {
+
+  const timer =
+    setInterval(() => {
+
+      setCurrentTime(
+        new Date()
+      );
+
+    }, 1000);
+
+  return () =>
+    clearInterval(timer);
+
+}, []);
   const stats = [
     { title: 'Total Revenue', value: 'Rp 25.000.000', change: '+18.5%', trending: 'up', icon: DollarSign, color: 'bg-gradient-to-br from-amber-500 to-amber-600' },
     { title: 'Total Bookings', value: '289', change: '+12.8%', trending: 'up', icon: CalendarIcon, color: 'bg-gradient-to-br from-blue-500 to-blue-600' },
@@ -11,7 +41,35 @@ export default function Dashboard() {
   ];
 
   return (
-    <>
+  <>
+
+    <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 mb-6 flex items-center justify-between">
+
+      <div>
+
+        <h2 className="text-3xl font-bold text-gray-800">
+          Welcome Back Admin 👋
+        </h2>
+
+        <p className="text-gray-500 mt-1">
+          Real Time Monitoring Dashboard
+        </p>
+
+      </div>
+
+      <div className="text-right">
+
+        <p className="text-gray-400 text-sm">
+          Current Time
+        </p>
+
+        <h3 className="text-4xl font-black text-amber-500">
+          {currentTime.toLocaleTimeString()}
+        </h3>
+
+      </div>
+
+    </div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {stats.map((stat, index) => {

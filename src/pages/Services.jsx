@@ -14,60 +14,60 @@ import ServiceAccordion from "../components/ui/ServiceAccordion";
 export default function Services() {
 
   const initialServices = [
-    {
-      id: 1,
-      icon: "✂️",
-      title: "Classic Haircut",
-      price: "Rp 150,000",
-      duration: "30 min",
-      popular: true,
-    },
+  {
+    id: 1,
+    image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800",
+    title: "Classic Haircut",
+    price: "Rp 150,000",
+    duration: "30 min",
+    popular: true,
+  },
 
-    {
-      id: 2,
-      icon: "💇",
-      title: "Premium Haircut",
-      price: "Rp 250,000",
-      duration: "45 min",
-      popular: true,
-    },
+  {
+    id: 2,
+    image: "https://images.unsplash.com/photo-1517832606299-7ae9b720a186?w=800",
+    title: "Premium Haircut",
+    price: "Rp 250,000",
+    duration: "45 min",
+    popular: true,
+  },
 
-    {
-      id: 3,
-      icon: "🧔",
-      title: "Beard Trim",
-      price: "Rp 100,000",
-      duration: "20 min",
-      popular: false,
-    },
+  {
+    id: 3,
+    image: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=800",
+    title: "Beard Trim",
+    price: "Rp 100,000",
+    duration: "20 min",
+    popular: false,
+  },
 
-    {
-      id: 4,
-      icon: "🎨",
-      title: "Hair Coloring",
-      price: "Rp 350,000",
-      duration: "60 min",
-      popular: false,
-    },
+  {
+    id: 4,
+    image: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800",
+    title: "Hair Coloring",
+    price: "Rp 350,000",
+    duration: "60 min",
+    popular: false,
+  },
 
-    {
-      id: 5,
-      icon: "🪒",
-      title: "Hot Towel Shave",
-      price: "Rp 180,000",
-      duration: "30 min",
-      popular: true,
-    },
+  {
+    id: 5,
+    image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800",
+    title: "Hot Towel Shave",
+    price: "Rp 180,000",
+    duration: "30 min",
+    popular: true,
+  },
 
-    {
-      id: 6,
-      icon: "🚿",
-      title: "Hair Wash + Styling",
-      price: "Rp 120,000",
-      duration: "25 min",
-      popular: false,
-    },
-  ];
+  {
+    id: 6,
+    image: "https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=800",
+    title: "Hair Wash + Styling",
+    price: "Rp 120,000",
+    duration: "25 min",
+    popular: false,
+  },
+];
 
   const [services, setServices] =
     useState(initialServices);
@@ -233,7 +233,7 @@ export default function Services() {
 
           <div
             key={service.id}
-            className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 relative hover:-translate-y-1 transition"
+            className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"x
           >
 
             {/* POPULAR */}
@@ -246,9 +246,19 @@ export default function Services() {
             )}
 
             {/* ICON */}
-            <div className="text-6xl mb-6">
-              {service.icon}
-            </div>
+            <div className="relative mb-5">
+  <img
+    src={service.image}
+    alt={service.title}
+    className="w-full h-56 object-cover rounded-2xl"
+  />
+
+  {service.popular && (
+    <div className="absolute top-3 right-3 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+      ★ Popular
+    </div>
+  )}
+</div>
 
             {/* TITLE */}
             <h2 className="text-3xl font-bold text-gray-800 mb-3">

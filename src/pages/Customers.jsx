@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import {
   Plus,
@@ -61,7 +61,10 @@ export default function Customers() {
     useState(initialCustomers);
 
   const [search, setSearch] =
-    useState("");
+  useState("");
+
+  const searchRef =
+  useRef(null);
 
   const [showCreateModal, setShowCreateModal] =
     useState(false);
@@ -180,16 +183,29 @@ export default function Customers() {
 
         </div>
 
-        <button
-          onClick={() => {
-            setFormData(emptyForm);
-            setShowCreateModal(true);
-          }}
-          className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition shadow-lg flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Add Customer
-        </button>
+        <div className="flex gap-3">
+
+  <button
+    onClick={() => {
+      setFormData(emptyForm);
+      setShowCreateModal(true);
+    }}
+    className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition shadow-lg flex items-center gap-2"
+  >
+    <Plus className="w-5 h-5" />
+    Add Customer
+  </button>
+
+  <button
+    onClick={() =>
+      searchRef.current.focus()
+    }
+    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition shadow-lg"
+  >
+    Focus Search
+  </button>
+
+</div>
 
       </div>
 
@@ -201,9 +217,10 @@ export default function Customers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
 
           <input
-            type="text"
-            placeholder="Search customer..."
-            value={search}
+  ref={searchRef}
+  type="text"
+  placeholder="Search customer..."
+  value={search}
             onChange={(e) =>
               setSearch(e.target.value)
             }

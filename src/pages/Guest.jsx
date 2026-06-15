@@ -34,7 +34,7 @@ export default function Guest() {
   const navLinks = [
     { name: "Home", href: "#home" },
     { name: "Kelebihan", href: "#kelebihan" },
-    { name: "Katalog", href: "#katalog" },
+    { name: "Katalogg", href: "#katalog" },
     { name: "Testimoni", href: "#testimoni" },
     { name: "Kontak", href: "#kontak" },
   ];

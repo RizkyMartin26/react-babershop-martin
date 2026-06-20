@@ -31,15 +31,19 @@ import Guest from "./pages/Guest";
 import Users from "./pages/Users"; 
 import Campaigns from "./pages/Campaigns";
 import Feedback from "./pages/Feedback";
+import MemberPortal from "./pages/MemberPortal";
 
 function App() {
   return (
     <Routes>
 
-      {/* MAIN */}
-      <Route path="/" element={<MainLayout />}>
+      {/* PUBLIC LANDING PAGE */}
+      <Route path="/" element={<Guest />} />
 
-        <Route index element={<Dashboard />} />
+      {/* MAIN ADMIN LAYOUT */}
+      <Route element={<MainLayout />}>
+
+        <Route path="dashboard" element={<Dashboard />} />
 
         <Route
           path="booking"
@@ -105,10 +109,12 @@ function App() {
 
       </Route>
 
-      {/* STANDALONE PUBLIC ROUTE OUTSIDE SIDEBAR */}
+      {/* (GUEST ROUTE NOW AT ROOT) */}
+
+      {/* MEMBER PORTAL */}
       <Route
-        path="guest"
-        element={<Guest />}
+        path="member-portal"
+        element={<MemberPortal />}
       />
 
       {/* AUTH */}

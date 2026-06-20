@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 import {
   Plus,
@@ -9,74 +9,51 @@ import {
   Phone,
   Star,
   X,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 
-import CustomerTabs from "../components/ui/CustomerTabs";
+// --- 30 DUMMY DATA ---
+const initialCustomers = Array.from({ length: 30 }).map((_, index) => {
+  const firstNames = ["John", "Michael", "David", "Ryan", "Chris", "Kevin", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Brian"];
+  const lastNames = ["Doe", "Smith", "Beckham", "Reynolds", "Evans", "Hart", "Bond", "Stark", "Wayne", "Kent", "Parker", "Banner", "Odinson", "Rogers", "Barton", "Romanoff", "Fury", "Hill", "Coulson", "Carter"];
+  
+  const fName = firstNames[index % firstNames.length];
+  const lName = lastNames[(index * 3) % lastNames.length];
+  const visits = Math.floor(Math.random() * 40) + 1;
+  const status = visits > 15 ? "VIP" : "Regular";
+  const phoneEnd = String(1000 + index * 111).padStart(4, '0');
+
+  return {
+    id: index + 1,
+    name: `${fName} ${lName}`,
+    email: `${fName.toLowerCase()}.${lName.toLowerCase()}@example.com`,
+    phone: `+62 812-${String(100 + index).padStart(4, '0')}-${phoneEnd}`,
+    visits: visits,
+    status: status,
+    initials: `${fName[0]}${lName[0]}`,
+  };
+});
 
 export default function Customers() {
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [search, setSearch] = useState("");
+  const searchRef = useRef(null);
 
-  const initialCustomers = [
-    {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+62 812-1111-2222",
-      visits: 24,
-      status: "VIP",
-      initials: "JD",
-    },
+  // Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-    {
-      id: 2,
-      name: "Michael Smith",
-      email: "michael@example.com",
-      phone: "+62 813-2222-3333",
-      visits: 18,
-      status: "Regular",
-      initials: "MS",
-    },
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-    {
-      id: 3,
-      name: "David Beckham",
-      email: "david@example.com",
-      phone: "+62 814-3333-4444",
-      visits: 32,
-      status: "VIP",
-      initials: "DB",
-    },
-
-    {
-      id: 4,
-      name: "Ryan Reynolds",
-      email: "ryan@example.com",
-      phone: "+62 815-4444-5555",
-      visits: 12,
-      status: "Regular",
-      initials: "RR",
-    },
-  ];
-
-  const [customers, setCustomers] =
-    useState(initialCustomers);
-
-  const [search, setSearch] =
-  useState("");
-
-  const searchRef =
-  useRef(null);
-
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
-
-  const [showEditModal, setShowEditModal] =
-    useState(false);
-
-  const [showDeleteModal, setShowDeleteModal] =
-    useState(false);
-
-  const [selectedCustomer, setSelectedCustomer] =
-    useState(null);
+  // Toast State
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const emptyForm = {
     name: "",
@@ -84,44 +61,55 @@ export default function Customers() {
     phone: "",
     visits: 0,
     status: "Regular",
-    initials: "",
   };
 
-  const [formData, setFormData] =
-    useState(emptyForm);
+  const [formData, setFormData] = useState(emptyForm);
 
-  // SEARCH
-  const filteredCustomers =
-    customers.filter((customer) =>
-      customer.name
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
+  // Toast Helper
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
+
+  // SEARCH FILTER
+  const filteredCustomers = customers.filter((customer) =>
+    customer.name.toLowerCase().includes(search.toLowerCase()) ||
+    customer.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // PAGINATION LOGIC
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // CREATE
   const handleCreate = () => {
-
-    if (
-      !formData.name ||
-      !formData.email
-    ) {
-      alert("Please fill all fields");
+    if (!formData.name || !formData.email || !formData.phone) {
+      showToast("Tolong lengkapi semua data wajib!", "error");
       return;
     }
 
+    const nameParts = formData.name.split(" ");
+    const initials = nameParts.length > 1 
+      ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+      : formData.name.substring(0, 2).toUpperCase();
+
     const newCustomer = {
       ...formData,
-      id: customers.length + 1,
+      id: Date.now(), // Unique ID
+      visits: parseInt(formData.visits) || 0,
+      initials,
     };
 
-    setCustomers([
-      ...customers,
-      newCustomer,
-    ]);
-
+    setCustomers([newCustomer, ...customers]);
     setFormData(emptyForm);
-
     setShowCreateModal(false);
+    showToast("Pelanggan baru berhasil ditambahkan!");
   };
 
   // EDIT
@@ -133,17 +121,25 @@ export default function Customers() {
 
   // UPDATE
   const handleUpdate = () => {
+    if (!formData.name || !formData.email || !formData.phone) {
+      showToast("Tolong lengkapi semua data wajib!", "error");
+      return;
+    }
 
-    const updated =
-      customers.map((customer) =>
-        customer.id === selectedCustomer.id
-          ? formData
-          : customer
-      );
+    const nameParts = formData.name.split(" ");
+    const initials = nameParts.length > 1 
+      ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+      : formData.name.substring(0, 2).toUpperCase();
+
+    const updated = customers.map((customer) =>
+      customer.id === selectedCustomer.id
+        ? { ...formData, initials, visits: parseInt(formData.visits) || 0 }
+        : customer
+    );
 
     setCustomers(updated);
-
     setShowEditModal(false);
+    showToast("Data pelanggan berhasil diperbarui!");
   };
 
   // DELETE
@@ -153,356 +149,344 @@ export default function Customers() {
   };
 
   const confirmDelete = () => {
-
-    const filtered =
-      customers.filter(
-        (customer) =>
-          customer.id !== selectedCustomer.id
-      );
-
+    const filtered = customers.filter(
+      (customer) => customer.id !== selectedCustomer.id
+    );
     setCustomers(filtered);
-
     setShowDeleteModal(false);
+    showToast("Pelanggan berhasil dihapus!");
+    
+    // Adjust pagination if needed
+    if (paginatedCustomers.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   return (
-    <>
+    <div className="relative min-h-[calc(100vh-100px)] flex flex-col">
+      {/* TOAST NOTIFICATION */}
+      <div className={`fixed top-6 right-6 z-[100] transition-all duration-300 transform ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"}`}>
+        <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${toast.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+          <span className="font-bold">{toast.message}</span>
+        </div>
+      </div>
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
-
-          <h2 className="text-3xl font-bold text-gray-800">
-            Customers Management
+          <h2 className="text-3xl font-black text-gray-800 tracking-tight">
+            Customer CRM
           </h2>
-
           <p className="text-gray-500 mt-1">
-            Manage your loyal customers
+            Kelola data dan loyalitas pelanggan Anda ({customers.length} Total)
           </p>
-
         </div>
 
-        <div className="flex gap-3">
-
-  <button
-    onClick={() => {
-      setFormData(emptyForm);
-      setShowCreateModal(true);
-    }}
-    className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition shadow-lg flex items-center gap-2"
-  >
-    <Plus className="w-5 h-5" />
-    Add Customer
-  </button>
-
-  <button
-    onClick={() =>
-      searchRef.current.focus()
-    }
-    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition shadow-lg"
-  >
-    Focus Search
-  </button>
-
-</div>
-
+        <div className="flex gap-3 w-full md:w-auto">
+          <button
+            onClick={() => {
+              setFormData(emptyForm);
+              setShowCreateModal(true);
+            }}
+            className="flex-1 md:flex-none px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 rounded-xl hover:scale-105 font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Add Customer
+          </button>
+        </div>
       </div>
 
       {/* SEARCH */}
-      <div className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100 mb-6">
-
+      <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 mb-8 max-w-2xl">
         <div className="relative">
-
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
-  ref={searchRef}
-  type="text"
-  placeholder="Search customer..."
-  value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+            ref={searchRef}
+            type="text"
+            placeholder="Cari nama atau email pelanggan..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all"
           />
-
         </div>
-
       </div>
 
       {/* CUSTOMER CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
-        {filteredCustomers.map((customer) => (
-
-          <div
-            key={customer.id}
-            className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 hover:-translate-y-1 transition"
-          >
-
-            {/* AVATAR */}
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 mx-auto flex items-center justify-center text-white text-4xl font-black shadow-xl mb-6">
-
-              {customer.initials}
-
-            </div>
-
-            {/* INFO */}
-            <div className="text-center">
-
-              <h2 className="text-2xl font-bold text-gray-800">
-                {customer.name}
-              </h2>
-
-              <div className="flex items-center justify-center gap-2 mt-2 text-gray-500 text-sm">
-
-                <Mail className="w-4 h-4" />
-
-                {customer.email}
-
-              </div>
-
-              <div className="flex items-center justify-center gap-2 mt-2 text-gray-500 text-sm">
-
-                <Phone className="w-4 h-4" />
-
-                {customer.phone}
-
-              </div>
-
-            </div>
-
-            {/* VISITS */}
-            <div className="mt-6 text-center">
-
-              <p className="text-gray-400 text-sm">
-                Total Visits
-              </p>
-
-              <h3 className="text-4xl font-black text-amber-500 mt-1">
-                {customer.visits}
-              </h3>
-
-            </div>
-
-            {/* STATUS */}
-            <div className="flex justify-center mt-5">
-
-              <span
-                className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 ${
-                  customer.status === "VIP"
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-
-                <Star className="w-4 h-4" />
-
-                {customer.status}
-
-              </span>
-
-            </div>
-
-            {/* BUTTONS */}
-            <div className="flex gap-3 mt-6">
-
-              <button
-                onClick={() =>
-                  handleEdit(customer)
-                }
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold transition"
-              >
-                Edit
-              </button>
-
-              <button
-                onClick={() =>
-                  handleDelete(customer)
-                }
-                className="p-3 border border-red-200 rounded-xl hover:bg-red-50 transition"
-              >
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </button>
-
-            </div>
-
+      {paginatedCustomers.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-10 h-10 text-gray-300" />
           </div>
+          <h3 className="text-xl font-bold text-gray-800">Tidak ada pelanggan ditemukan</h3>
+          <p className="text-gray-500 mt-2">Coba gunakan kata kunci pencarian yang lain.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8 flex-1">
+          {paginatedCustomers.map((customer) => (
+            <div
+              key={customer.id}
+              className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:-translate-y-1.5 hover:shadow-xl hover:border-amber-200 transition-all duration-300 group flex flex-col h-full"
+            >
+              {/* AVATAR */}
+              <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-amber-400 to-orange-500 mx-auto flex items-center justify-center text-slate-950 text-3xl font-black shadow-lg shadow-amber-500/30 mb-6 group-hover:scale-110 transition-transform duration-500">
+                {customer.initials}
+              </div>
 
-        ))}
+              {/* INFO */}
+              <div className="text-center flex-1">
+                <h2 className="text-xl font-bold text-gray-800 line-clamp-1">
+                  {customer.name}
+                </h2>
 
-      </div>
+                <div className="flex items-center justify-center gap-2 mt-3 text-gray-500 text-sm">
+                  <Mail className="w-4 h-4 text-gray-400" />
+                  <span className="truncate">{customer.email}</span>
+                </div>
 
-      {/* CREATE + EDIT MODAL */}
+                <div className="flex items-center justify-center gap-2 mt-2 text-gray-500 text-sm">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <span>{customer.phone}</span>
+                </div>
+              </div>
+
+              {/* VISITS & STATUS */}
+              <div className="mt-6 flex items-end justify-between border-t border-gray-100 pt-6">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Total Visits</p>
+                  <h3 className="text-3xl font-black text-slate-800">
+                    {customer.visits}
+                  </h3>
+                </div>
+                <div className="pb-1">
+                  <span
+                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${
+                      customer.status === "VIP"
+                        ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950"
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                    }`}
+                  >
+                    {customer.status === "VIP" && <Star className="w-3.5 h-3.5 fill-current" />}
+                    {customer.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => handleEdit(customer)}
+                  className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Edit className="w-4 h-4" /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(customer)}
+                  className="p-2.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-100 hover:border-red-500 rounded-xl transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="mt-auto pt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-200">
+          <p className="text-sm text-gray-500 font-medium">
+            Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredCustomers.length)}</span> dari <span className="font-bold text-gray-900">{filteredCustomers.length}</span> pelanggan
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1;
+                // Simple pagination logic to avoid too many buttons
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                        currentPage === page
+                          ? "bg-amber-500 text-slate-950 shadow-md"
+                          : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (
+                  page === currentPage - 2 ||
+                  page === currentPage + 2
+                ) {
+                  return <span key={page} className="px-1 text-gray-400">...</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CREATE / EDIT */}
       {(showCreateModal || showEditModal) && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowCreateModal(false);
+                setShowEditModal(false);
+              }}
+              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <h2 className="text-2xl font-bold">
-                {showCreateModal
-                  ? "Add Customer"
-                  : "Edit Customer"}
+            <div className="mb-8">
+              <h2 className="text-2xl font-black text-gray-800">
+                {showCreateModal ? "Tambah Pelanggan Baru" : "Edit Data Pelanggan"}
               </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Lengkapi informasi pelanggan di bawah ini.
+              </p>
+            </div>
 
+            <div className="space-y-5">
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Nama Lengkap <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Masukkan nama lengkap"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Alamat Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  placeholder="contoh@email.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Nomor WhatsApp <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="+62 812-..."
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Total Kunjungan</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={formData.visits}
+                    onChange={(e) => setFormData({ ...formData, visits: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Status Member</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  >
+                    <option value="Regular">Regular</option>
+                    <option value="VIP">VIP</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-3">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   setShowEditModal(false);
                 }}
+                className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition-colors"
               >
-                <X />
+                Batal
               </button>
-
-            </div>
-
-            <div className="space-y-4">
-
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    name: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    email: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="text"
-                placeholder="Phone Number"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phone: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="text"
-                placeholder="Initials"
-                value={formData.initials}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    initials: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="number"
-                placeholder="Total Visits"
-                value={formData.visits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    visits: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
+              <button
+                onClick={showCreateModal ? handleCreate : handleUpdate}
+                className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:scale-[1.02] py-4 rounded-xl font-black transition-all shadow-lg"
               >
-                <option>Regular</option>
-                <option>VIP</option>
-              </select>
-
+                {showCreateModal ? "Simpan Pelanggan" : "Update Perubahan"}
+              </button>
             </div>
-
-            <button
-              onClick={
-                showCreateModal
-                  ? handleCreate
-                  : handleUpdate
-              }
-              className="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold"
-            >
-              {showCreateModal
-                ? "Create Customer"
-                : "Save Changes"}
-            </button>
-
           </div>
-
         </div>
-
       )}
 
-      {/* DELETE MODAL */}
-      {showDeleteModal && (
-
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white rounded-3xl p-8 w-full max-w-sm">
-
-            <h2 className="text-2xl font-bold mb-4">
-              Delete Customer
+      {/* MODAL: DELETE CONFIRMATION */}
+      {showDeleteModal && selectedCustomer && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-10 h-10" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-800 mb-2">
+              Hapus Pelanggan?
             </h2>
-
-            <p className="text-gray-500 mb-6">
-              Are you sure want to delete this customer?
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              Anda yakin ingin menghapus <strong className="text-gray-800">{selectedCustomer.name}</strong> dari sistem? Tindakan ini tidak dapat dibatalkan.
             </p>
 
             <div className="flex gap-3">
-
               <button
-                onClick={() =>
-                  setShowDeleteModal(false)
-                }
-                className="flex-1 py-3 border rounded-xl"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition-colors"
               >
-                Cancel
+                Batal
               </button>
-
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl"
+                className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30"
               >
-                Delete
+                Ya, Hapus
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
-
-    </>
+    </div>
   );
 }

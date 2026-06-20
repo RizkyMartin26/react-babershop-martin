@@ -21,7 +21,7 @@ export default function Sidebar() {
     {
       title: "UTAMA",
       items: [
-        { path: "/", icon: LayoutDashboard, label: "Dashboard" }
+        { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }
       ]
     },
     {

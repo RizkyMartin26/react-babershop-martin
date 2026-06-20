@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import React, { useState, useRef, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -7,34 +6,72 @@ import {
   Edit,
   Trash2,
   X,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  Clock,
+  User,
+  Scissors
 } from "lucide-react";
 
-import { appointments } from "../data/mockData";
-import DialogDemo from "../components/ui/DialogDemo";
+// --- 30 DUMMY DATA ---
+const barbers = ["Michael Jordan", "David Beckham", "Ryan Reynolds", "Chris Evans", "Tom Hardy"];
+const services = ["Premium Haircut", "Classic Haircut + Beard", "Hot Towel Shave", "Hair Coloring", "Kids Haircut"];
+const statuses = ["Confirmed", "Pending", "Completed", "Cancelled"];
+
+const initialBookings = Array.from({ length: 30 }).map((_, index) => {
+  const fNames = ["Alex", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew"];
+  const lNames = ["Smith", "Wilson", "Brown", "Davis", "Miller", "Taylor", "Anderson", "Thomas", "Jackson", "White"];
+  
+  const customer = `${fNames[index % fNames.length]} ${lNames[(index * 2) % lNames.length]}`;
+  const barber = barbers[index % barbers.length];
+  const service = services[index % services.length];
+  
+  // Distribute statuses: mostly confirmed/completed, some pending, few cancelled
+  let status = "Confirmed";
+  if (index % 5 === 0) status = "Pending";
+  if (index % 4 === 0) status = "Completed";
+  if (index % 12 === 0) status = "Cancelled";
+
+  // Generate a random date within the next 30 days
+  const dateObj = new Date();
+  dateObj.setDate(dateObj.getDate() + (index % 15) - 2); 
+  const date = dateObj.toISOString().split('T')[0];
+  
+  const hour = 9 + (index % 10);
+  const time = `${hour.toString().padStart(2, '0')}:${index % 2 === 0 ? '00' : '30'}`;
+
+  return {
+    id: `BK${String(1001 + index).padStart(4, '0')}`,
+    customer,
+    barber,
+    service,
+    date,
+    time,
+    status,
+  };
+});
 
 export default function Booking() {
-
-  const [bookingData, setBookingData] =
-    useState(appointments);
-
+  const [bookingData, setBookingData] = useState(initialBookings);
   const [search, setSearch] = useState("");
+  const searchRef = useRef(null);
 
-  const [selectedBooking, setSelectedBooking] =
-    useState(null);
+  // Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
-  const [showViewModal, setShowViewModal] =
-    useState(false);
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-  const [showEditModal, setShowEditModal] =
-    useState(false);
-
-  const [showDeleteModal, setShowDeleteModal] =
-    useState(false);
-
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
-  const [showDialog, setShowDialog] =
-  useState(false);
+  // Toast State
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const emptyForm = {
     id: "",
@@ -43,32 +80,57 @@ export default function Booking() {
     service: "",
     date: "",
     time: "",
-    status: "Confirmed",
+    status: "Pending",
   };
 
-  const [formData, setFormData] =
-    useState(emptyForm);
+  const [formData, setFormData] = useState(emptyForm);
 
-  // SEARCH
-  const filteredBookings =
-    bookingData.filter((item) =>
-      item.customer
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
+  // Toast Helper
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
+  };
 
-      item.service
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
+  // SEARCH FILTER
+  const filteredBookings = bookingData.filter((item) =>
+    item.customer.toLowerCase().includes(search.toLowerCase()) ||
+    item.service.toLowerCase().includes(search.toLowerCase()) ||
+    item.barber.toLowerCase().includes(search.toLowerCase()) ||
+    item.id.toLowerCase().includes(search.toLowerCase())
+  );
 
-      item.barber
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
+  // PAGINATION LOGIC
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // VIEW
   const handleView = (booking) => {
     setSelectedBooking(booking);
     setShowViewModal(true);
+  };
+
+  // CREATE
+  const handleCreate = () => {
+    if (!formData.customer || !formData.barber || !formData.service || !formData.date || !formData.time) {
+      showToast("Tolong lengkapi semua field wajib!", "error");
+      return;
+    }
+
+    const newBooking = {
+      ...formData,
+      id: `BK${String(1000 + bookingData.length + 1).padStart(4, '0')}`,
+    };
+
+    setBookingData([newBooking, ...bookingData]);
+    setFormData(emptyForm);
+    setShowCreateModal(false);
+    showToast("Jadwal booking baru berhasil ditambahkan!");
   };
 
   // EDIT
@@ -80,17 +142,18 @@ export default function Booking() {
 
   // UPDATE
   const handleUpdate = () => {
+    if (!formData.customer || !formData.barber || !formData.service || !formData.date || !formData.time) {
+      showToast("Tolong lengkapi semua field wajib!", "error");
+      return;
+    }
 
-    const updated =
-      bookingData.map((item) =>
-        item.id === selectedBooking.id
-          ? formData
-          : item
-      );
+    const updated = bookingData.map((item) =>
+      item.id === selectedBooking.id ? formData : item
+    );
 
     setBookingData(updated);
-
     setShowEditModal(false);
+    showToast(`Data booking ${formData.id} berhasil diperbarui!`);
   };
 
   // DELETE
@@ -100,485 +163,426 @@ export default function Booking() {
   };
 
   const confirmDelete = () => {
-
-    const filtered =
-      bookingData.filter(
-        (item) =>
-          item.id !== selectedBooking.id
-      );
-
+    const filtered = bookingData.filter((item) => item.id !== selectedBooking.id);
     setBookingData(filtered);
-
     setShowDeleteModal(false);
+    showToast(`Booking ${selectedBooking.id} berhasil dihapus!`);
+    
+    // Adjust pagination if needed
+    if (paginatedBookings.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
-  // CREATE
-  const handleCreate = () => {
-
-    if (
-      !formData.customer ||
-      !formData.barber ||
-      !formData.service
-    ) {
-      alert("Please fill all fields");
-      return;
+  // Status Badge Helper
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Confirmed": return "bg-green-100 text-green-700 border-green-200";
+      case "Pending": return "bg-amber-100 text-amber-700 border-amber-200";
+      case "Completed": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "Cancelled": return "bg-red-100 text-red-700 border-red-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
     }
-
-    const newBooking = {
-      ...formData,
-      id: `#BK00${bookingData.length + 1}`,
-    };
-
-    setBookingData([
-      ...bookingData,
-      newBooking,
-    ]);
-
-    setFormData(emptyForm);
-
-    setShowCreateModal(false);
   };
 
   return (
-    <>
+    <div className="relative min-h-[calc(100vh-100px)] flex flex-col">
+      
+      {/* TOAST NOTIFICATION */}
+      <div className={`fixed top-6 right-6 z-[100] transition-all duration-300 transform ${toast.show ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none"}`}>
+        <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${toast.type === 'success' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+          <span className="font-bold">{toast.message}</span>
+        </div>
+      </div>
 
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
-
-          <h2 className="text-3xl font-bold text-gray-800">
-            All Bookings
+          <h2 className="text-3xl font-black text-gray-800 tracking-tight">
+            Semua Booking
           </h2>
-
           <p className="text-gray-500 mt-1">
-            Manage customer appointments
+            Kelola jadwal potong rambut pelanggan ({bookingData.length} Total)
           </p>
-
         </div>
 
         <button
           onClick={() => {
-          setShowDialog(true);
-            }}
-          className="px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition flex items-center gap-2 shadow-lg"
+            setFormData(emptyForm);
+            setShowCreateModal(true);
+          }}
+          className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 rounded-xl hover:scale-105 font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Create Booking
         </button>
-
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-
-        {/* SEARCH */}
-        <div className="p-6 border-b border-gray-100">
-
-          <div className="relative">
-
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-
+      {/* TABLE CONTAINER */}
+      <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 flex flex-col flex-1 overflow-hidden">
+        
+        {/* SEARCH BAR */}
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+          <div className="relative max-w-xl">
+            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
+              ref={searchRef}
               type="text"
-              placeholder="Search bookings..."
+              placeholder="Cari ID, Pelanggan, Barber, atau Layanan..."
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              className="pl-10 pr-4 py-3 border border-gray-300 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-amber-500"
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl w-full focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-700 shadow-sm"
             />
-
           </div>
-
         </div>
 
-        {/* TABLE */}
-        <div className="overflow-x-auto">
-
-          <table className="w-full">
-
-            <thead className="bg-gray-50">
-
-              <tr>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Booking ID
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Customer
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Barber
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Service
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Date & Time
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Status
-                </th>
-
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">
-                  Actions
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody className="divide-y divide-gray-200">
-
-              {filteredBookings.map((apt) => (
-
-                <tr
-                  key={apt.id}
-                  className="hover:bg-gray-50 transition"
-                >
-
-                  <td className="px-6 py-4 font-bold">
-                    {apt.id}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {apt.customer}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {apt.barber}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    {apt.service}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div>{apt.date}</div>
-                    <div className="text-sm text-gray-400">
-                      {apt.time}
-                    </div>
-                  </td>
-
-                  <td className="px-6 py-4">
-
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                      {apt.status}
-                    </span>
-
-                  </td>
-
-                  <td className="px-6 py-4">
-
-                    <div className="flex gap-2">
-
-                      <button
-                        onClick={() =>
-                          handleView(apt)
-                        }
-                        className="p-2 hover:bg-blue-50 rounded-lg"
-                      >
-                        <Eye className="w-4 h-4 text-blue-600" />
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          handleEdit(apt)
-                        }
-                        className="p-2 hover:bg-amber-50 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4 text-amber-600" />
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          handleDelete(apt)
-                        }
-                        className="p-2 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-
-                    </div>
-
-                  </td>
-
+        {/* TABLE DATA */}
+        {paginatedBookings.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800">Tidak ada booking ditemukan</h3>
+            <p className="text-gray-500 mt-2">Coba gunakan kata kunci pencarian yang lain.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white border-b border-gray-100">
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Booking ID</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Barber</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Service</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Date & Time</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {paginatedBookings.map((apt) => (
+                  <tr key={apt.id} className="hover:bg-amber-50/30 transition-colors group">
+                    <td className="px-6 py-4 font-bold text-amber-600 font-mono text-sm whitespace-nowrap">
+                      #{apt.id}
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-800 whitespace-nowrap">
+                      {apt.customer}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                      {apt.barber}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 font-medium whitespace-nowrap">
+                      {apt.service}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-gray-800 font-medium">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        {new Date(apt.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        {apt.time}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${getStatusBadge(apt.status)}`}>
+                        {apt.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleView(apt)} className="p-2 hover:bg-blue-50 hover:text-blue-600 text-gray-400 rounded-lg transition-colors tooltip" title="View Details">
+                          <Eye className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleEdit(apt)} className="p-2 hover:bg-amber-50 hover:text-amber-600 text-gray-400 rounded-lg transition-colors tooltip" title="Edit Booking">
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleDelete(apt)} className="p-2 hover:bg-red-50 hover:text-red-600 text-gray-400 rounded-lg transition-colors tooltip" title="Delete Booking">
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-              ))}
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && (
+          <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col md:flex-row items-center justify-between gap-4 mt-auto">
+            <p className="text-sm text-gray-500 font-medium">
+              Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredBookings.length)}</span> dari <span className="font-bold text-gray-900">{filteredBookings.length}</span> jadwal
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const page = idx + 1;
+                  if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                          currentPage === page
+                            ? "bg-amber-500 text-slate-950 shadow-md"
+                            : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  } else if (page === currentPage - 2 || page === currentPage + 2) {
+                    return <span key={page} className="px-1 text-gray-400 font-bold">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
 
-            </tbody>
-
-          </table>
-
-        </div>
-
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* CREATE + EDIT MODAL */}
+      {/* MODAL: CREATE / EDIT */}
       {(showCreateModal || showEditModal) && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-2xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+            <button
+              onClick={() => {
+                setShowCreateModal(false);
+                setShowEditModal(false);
+              }}
+              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <h2 className="text-2xl font-bold">
-                {showCreateModal
-                  ? "Create Booking"
-                  : "Edit Booking"}
+            <div className="mb-8 border-b border-gray-100 pb-6">
+              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+                <Calendar className="w-6 h-6 text-amber-500" />
+                {showCreateModal ? "Buat Jadwal Baru" : "Edit Jadwal Booking"}
               </h2>
+              <p className="text-gray-500 text-sm mt-2">
+                {showCreateModal ? "Lengkapi form di bawah untuk menambahkan reservasi." : `Memperbarui data booking ${formData.id}`}
+              </p>
+            </div>
 
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Nama Pelanggan <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: John Doe"
+                    value={formData.customer}
+                    onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Pilih Barber <span className="text-red-500">*</span></label>
+                  <select
+                    value={formData.barber}
+                    onChange={(e) => setFormData({ ...formData, barber: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  >
+                    <option value="" disabled>Pilih Barber...</option>
+                    {barbers.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Jenis Layanan <span className="text-red-500">*</span></label>
+                <select
+                  value={formData.service}
+                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                  className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                >
+                  <option value="" disabled>Pilih layanan...</option>
+                  {services.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Tanggal <span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Waktu <span className="text-red-500">*</span></label>
+                  <input
+                    type="time"
+                    value={formData.time}
+                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-gray-500 mb-2">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full border border-gray-300 bg-gray-50 rounded-xl px-4 py-3.5 focus:bg-white focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition-all font-medium text-gray-800"
+                  >
+                    {statuses.map(st => <option key={st} value={st}>{st}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 flex gap-4">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   setShowEditModal(false);
                 }}
+                className="flex-[1] py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition-colors"
               >
-                <X />
+                Batal
               </button>
-
-            </div>
-
-            <div className="space-y-4">
-
-              <input
-                type="text"
-                placeholder="Customer"
-                value={formData.customer}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    customer: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="text"
-                placeholder="Barber"
-                value={formData.barber}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    barber: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="text"
-                placeholder="Service"
-                value={formData.service}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    service: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    date: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    time: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
-              />
-
-              <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value,
-                  })
-                }
-                className="w-full border rounded-xl px-4 py-3"
+              <button
+                onClick={showCreateModal ? handleCreate : handleUpdate}
+                className="flex-[2] bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:scale-[1.02] py-4 rounded-xl font-black transition-all shadow-lg"
               >
-                <option>Confirmed</option>
-                <option>Pending</option>
-                <option>Completed</option>
-              </select>
-
+                {showCreateModal ? "Simpan Booking" : "Update Booking"}
+              </button>
             </div>
-
-            <button
-              onClick={
-                showCreateModal
-                  ? handleCreate
-                  : handleUpdate
-              }
-              className="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold"
-            >
-              {showCreateModal
-                ? "Create Booking"
-                : "Save Changes"}
-            </button>
-
           </div>
-
         </div>
-
       )}
 
       {/* VIEW MODAL */}
       {showViewModal && selectedBooking && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowViewModal(false)}
+              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="mb-8 text-center">
+              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Scissors className="w-8 h-8" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-800">Detail Booking</h2>
+              <p className="text-amber-600 font-mono font-bold mt-1">#{selectedBooking.id}</p>
+            </div>
 
-          <div className="bg-white rounded-3xl p-8 w-full max-w-md">
+            <div className="bg-gray-50 rounded-2xl p-6 space-y-5 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400">
+                  <User className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase font-bold text-gray-400">Pelanggan</p>
+                  <p className="font-bold text-gray-800">{selectedBooking.customer}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400">
+                  <Scissors className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase font-bold text-gray-400">Layanan & Barber</p>
+                  <p className="font-bold text-gray-800">{selectedBooking.service}</p>
+                  <p className="text-sm text-gray-500">by {selectedBooking.barber}</p>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase font-bold text-gray-400">Waktu Kedatangan</p>
+                  <p className="font-bold text-gray-800">
+                    {new Date(selectedBooking.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                  <p className="text-sm text-gray-500 font-medium">{selectedBooking.time} WIB</p>
+                </div>
+              </div>
+            </div>
 
-              <h2 className="text-2xl font-bold">
-                Booking Detail
-              </h2>
+            <div className="mt-8 flex justify-center">
+               <span className={`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider border ${getStatusBadge(selectedBooking.status)}`}>
+                  Status: {selectedBooking.status}
+               </span>
+            </div>
 
+            <div className="mt-8">
               <button
-                onClick={() =>
-                  setShowViewModal(false)
-                }
+                onClick={() => setShowViewModal(false)}
+                className="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition-colors"
               >
-                <X />
+                Tutup Panel
               </button>
-
             </div>
-
-            <div className="space-y-4">
-
-              <div>
-                <p className="text-gray-400 text-sm">
-                  Customer
-                </p>
-
-                <h3 className="font-semibold">
-                  {selectedBooking.customer}
-                </h3>
-              </div>
-
-              <div>
-                <p className="text-gray-400 text-sm">
-                  Barber
-                </p>
-
-                <h3 className="font-semibold">
-                  {selectedBooking.barber}
-                </h3>
-              </div>
-
-              <div>
-                <p className="text-gray-400 text-sm">
-                  Service
-                </p>
-
-                <h3 className="font-semibold">
-                  {selectedBooking.service}
-                </h3>
-              </div>
-
-            </div>
-
           </div>
-
         </div>
-
       )}
 
       {/* DELETE MODAL */}
-      {showDeleteModal && (
-
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white rounded-3xl p-8 w-full max-w-sm">
-
-            <h2 className="text-2xl font-bold mb-4">
-              Delete Booking
+      {showDeleteModal && selectedBooking && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-10 h-10" />
+            </div>
+            
+            <h2 className="text-2xl font-black text-gray-800 mb-2">
+              Hapus Booking?
             </h2>
-
-            <p className="text-gray-500 mb-6">
-              Are you sure want to delete this booking?
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              Anda yakin ingin membatalkan dan menghapus jadwal <strong className="text-gray-800">#{selectedBooking.id}</strong> atas nama <strong className="text-gray-800">{selectedBooking.customer}</strong>?
             </p>
 
             <div className="flex gap-3">
-
               <button
-                onClick={() =>
-                  setShowDeleteModal(false)
-                }
-                className="flex-1 py-3 border rounded-xl"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-bold transition-colors"
               >
-                Cancel
+                Kembali
               </button>
-
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-3 bg-red-500 text-white rounded-xl"
+                className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30"
               >
-                Delete
+                Ya, Hapus
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
-<DialogDemo
-  open={showDialog}
-  setOpen={setShowDialog}
-  title="Booking Dialog UI"
->
 
-  <div className="space-y-4">
-
-    <p className="text-gray-500">
-      This component uses Radix UI Dialog.
-    </p>
-
-    <button
-      onClick={() => {
-        setShowDialog(false);
-
-        setFormData(emptyForm);
-
-        setShowCreateModal(true);
-      }}
-      className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold"
-    >
-      Continue Create Booking
-    </button>
-
-  </div>
-
-</DialogDemo>
-    </>
+    </div>
   );
 }

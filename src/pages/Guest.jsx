@@ -13,7 +13,8 @@ import {
   ChevronRight,
   LogOut,
   Menu,
-  X
+  X,
+  UserCircle2
 } from "lucide-react";
 import { FaInstagram, FaFacebook } from "react-icons/fa";
 
@@ -85,13 +86,20 @@ export default function Guest() {
             ))}
           </div>
 
-          {/* Admin Login Button */}
-          <div className="hidden md:flex items-center">
+          {/* Login Buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            <Link 
+              to="/login?type=member"
+              className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-full text-sm border border-slate-700 transition-all hover:scale-105 shadow-lg"
+            >
+              <UserCircle2 className="w-4 h-4 text-amber-500" />
+              Login Member
+            </Link>
             <Link 
               to="/login"
               className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-full text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-105 transition-all"
             >
-              <LogOut className="w-4 h-4" />
+              <ShieldCheck className="w-4 h-4" />
               Login Admin
             </Link>
           </div>
@@ -118,13 +126,22 @@ export default function Guest() {
                 {link.name}
               </a>
             ))}
-            <Link 
-              to="/login"
-              className="flex items-center justify-center gap-2 px-5 py-3 mt-2 bg-amber-500 text-slate-950 font-bold rounded-xl"
-            >
-              <LogOut className="w-4 h-4" />
-              Login Dashboard Admin
-            </Link>
+            <div className="flex flex-col gap-2 mt-2">
+              <Link 
+                to="/login?type=member"
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-slate-800 text-white font-bold rounded-xl border border-slate-700"
+              >
+                <UserCircle2 className="w-4 h-4 text-amber-500" />
+                Login Member
+              </Link>
+              <Link 
+                to="/login"
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Login Admin
+              </Link>
+            </div>
           </div>
         )}
       </nav>

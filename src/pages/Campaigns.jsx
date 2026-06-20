@@ -196,7 +196,7 @@ export default function Campaigns() {
                 <option>Semua Customer (245)</option>
                 <option>Member Gold (42)</option>
                 <option>Customer Baru Bulan Ini (18)</option>
-                <option>Belum Cukur > 3 Bulan (56)</option>
+                <option>Belum Cukur &gt; 3 Bulan (56)</option>
               </select>
             </div>
 

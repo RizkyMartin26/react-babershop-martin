@@ -9,6 +9,12 @@ export default function MainLayout() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const isMock = localStorage.getItem("mock_session_active") === "true";
+    if (isMock) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate('/login');
@@ -20,7 +26,7 @@ export default function MainLayout() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
+      if (!session && !isMock) {
         navigate('/login');
       }
     });

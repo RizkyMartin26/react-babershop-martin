@@ -32,34 +32,22 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // 1. Sign up the user in Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: fullName,
-            phone,
-            role: "customer" // Default role for registrations
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      // 2. Insert user profile into public users table for CRUD management
-      const { error: dbErr } = await supabase.from("users").insert([
-        {
-          id: data.user.id,
-          name: fullName,
+      // --- SAVE TO LOCAL STORAGE FOR MOCK/DEMO ---
+      const mockUsers = JSON.parse(localStorage.getItem("mock_users") || "[]");
+      mockUsers.push({ email, password, name: fullName, phone });
+      localStorage.setItem("mock_users", JSON.stringify(mockUsers));
+      
+      try {
+        // Attempt Supabase Auth (Silent fail if not configured)
+        await supabase.auth.signUp({
           email,
-          phone,
-          role: "customer"
-        }
-      ]);
-
-      if (dbErr) {
-        console.warn("DB insert error, trigger might have handled it:", dbErr);
+          password,
+          options: {
+            data: { name: fullName, phone, role: "customer" }
+          }
+        });
+      } catch (e) {
+        console.warn("Supabase auth failed, but local storage fallback succeeded.", e);
       }
 
       setSuccessMsg("Pendaftaran berhasil! Anda akan dialihkan ke halaman login.");
@@ -75,8 +63,18 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 flex items-center justify-center p-6 text-slate-100 font-sans">
-      <div className="w-full max-w-md">
+    <div 
+      className="min-h-screen flex items-center justify-center p-6 text-slate-100 font-sans relative"
+      style={{
+        backgroundImage: 'url("https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2000&auto=format&fit=crop")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px]"></div>
+
+      <div className="w-full max-w-md relative z-10 pt-10 pb-10">
         
         {/* Logo */}
         <div className="text-center mb-8">

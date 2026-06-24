@@ -318,9 +318,9 @@ export default function Guest() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 1" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 2" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1512495962002-39bd5d16f866?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 3" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 4" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 2" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 3" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="https://images.unsplash.com/photo-1622286342661-581ca9fb10eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 4" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
           </div>
         </div>
       </section>

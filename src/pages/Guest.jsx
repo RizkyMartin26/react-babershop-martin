@@ -317,10 +317,10 @@ export default function Guest() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 1" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 2" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 3" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
-            <img src="https://images.unsplash.com/photo-1622286342661-581ca9fb10eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Gallery 4" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="/images/gallery_1.png" alt="Gallery 1 - Fade Haircut" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="/images/gallery_2.png" alt="Gallery 2 - Beard Trim" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="/images/gallery_3.png" alt="Gallery 3 - Barbershop Interior" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
+            <img src="/images/gallery_4.png" alt="Gallery 4 - Hair Wash" className="w-full h-64 object-cover rounded-2xl hover:scale-105 transition-transform duration-300" />
           </div>
         </div>
       </section>

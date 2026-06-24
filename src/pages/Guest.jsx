@@ -410,7 +410,7 @@ export default function Guest() {
                   className="w-full px-6 py-4 text-left flex justify-between items-center text-white font-bold hover:text-amber-500 transition-colors"
                 >
                   {faq.q}
-                  <ChevronDown className={\`w-5 h-5 transition-transform \${openFaq === idx ? "rotate-180 text-amber-500" : "text-neutral-500"}\`} />
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openFaq === idx ? "rotate-180 text-amber-500" : "text-neutral-500"}`} />
                 </button>
                 {openFaq === idx && (
                   <div className="px-6 pb-4 text-neutral-400 text-sm leading-relaxed border-t border-white/5 pt-4">

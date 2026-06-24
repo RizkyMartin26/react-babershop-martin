@@ -15,7 +15,18 @@ import {
   CheckCircle2,
   ThumbsUp,
   ChevronDown,
-  Quote
+  Quote,
+  Award,
+  Gift,
+  Tag,
+  Calendar,
+  User,
+  Clock,
+  MessageSquare,
+  LayoutDashboard,
+  History,
+  TrendingUp,
+  Send
 } from "lucide-react";
 import { FaInstagram, FaFacebook, FaTiktok } from "react-icons/fa";
 
@@ -23,6 +34,10 @@ export default function Guest() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
+
+  // States for CRM features mock
+  const [bookingDate, setBookingDate] = useState("");
+  const [feedbackRating, setFeedbackRating] = useState(5);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,10 +49,10 @@ export default function Guest() {
 
   const navLinks = [
     { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
     { name: "Services", href: "#services" },
-    { name: "Gallery", href: "#gallery" },
-    { name: "Contact", href: "#contact" },
+    { name: "Membership", href: "#membership" },
+    { name: "Promo", href: "#promo" },
+    { name: "Booking", href: "#booking" },
   ];
 
   const scrollToSection = (e, href) => {
@@ -419,6 +434,330 @@ export default function Guest() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MEMBERSHIP SECTION */}
+      <section id="membership" className="py-24 bg-neutral-900 border-t border-white/5 relative">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Elite <span className="text-amber-500">Membership</span></h2>
+            <p className="text-neutral-400 max-w-xl mx-auto">Bergabunglah dengan keanggotaan eksklusif kami dan nikmati berbagai keuntungan premium setiap kali Anda berkunjung.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Bronze */}
+            <div className="bg-neutral-950 p-8 rounded-3xl border border-white/10 relative hover:border-amber-700/50 transition-all flex flex-col">
+              <h3 className="text-2xl font-black text-amber-700 mb-2 uppercase tracking-wider">Bronze</h3>
+              <div className="text-4xl font-black text-white mb-6">Rp 100K<span className="text-sm text-neutral-500 font-normal">/tahun</span></div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-700 shrink-0" /> Welcome drink setiap kunjungan</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-700 shrink-0" /> Diskon 5% untuk produk pomade</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-700 shrink-0" /> Poin loyalty standar</li>
+              </ul>
+              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-colors">Pilih Bronze</button>
+            </div>
+
+            {/* Silver (Popular) */}
+            <div className="bg-gradient-to-b from-neutral-800 to-neutral-950 p-8 rounded-3xl border border-slate-400 relative hover:border-slate-300 transition-all transform md:-translate-y-4 shadow-2xl flex flex-col">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-300 text-neutral-950 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider">Most Popular</div>
+              <h3 className="text-2xl font-black text-slate-300 mb-2 uppercase tracking-wider">Silver</h3>
+              <div className="text-4xl font-black text-white mb-6">Rp 250K<span className="text-sm text-neutral-400 font-normal">/tahun</span></div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Semua fitur Bronze</li>
+                <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Diskon 10% semua layanan haircut</li>
+                <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Free hair wash setiap potong</li>
+                <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Poin loyalty 1.5x lebih cepat</li>
+              </ul>
+              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-slate-300 hover:bg-slate-200 text-neutral-950 font-black rounded-xl transition-colors shadow-lg">Pilih Silver</button>
+            </div>
+
+            {/* Gold */}
+            <div className="bg-neutral-950 p-8 rounded-3xl border border-amber-500/30 relative hover:border-amber-500 transition-all flex flex-col">
+              <h3 className="text-2xl font-black text-amber-500 mb-2 uppercase tracking-wider">Gold</h3>
+              <div className="text-4xl font-black text-white mb-6">Rp 500K<span className="text-sm text-neutral-500 font-normal">/tahun</span></div>
+              <ul className="space-y-4 mb-8 flex-1">
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Semua fitur Silver</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Prioritas antrean (VIP)</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Gratis 1x cukur di bulan ulang tahun</li>
+                <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Poin loyalty 2x lebih cepat</li>
+              </ul>
+              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-amber-500/10 hover:bg-amber-500 hover:text-neutral-950 text-amber-500 font-bold rounded-xl border border-amber-500 transition-colors">Pilih Gold</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* LOYALTY PROGRAM & PROMO (Combined) */}
+      <section id="promo" className="py-24 bg-neutral-950 relative border-t border-white/5">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            
+            {/* Loyalty Info */}
+            <div>
+              <div className="inline-block px-4 py-1.5 bg-purple-500/10 text-purple-400 font-bold tracking-wider text-sm rounded-full mb-6 uppercase border border-purple-500/20">
+                Loyalty Program
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
+                Kumpulkan Poin, <br/><span className="text-purple-400">Dapatkan Reward.</span>
+              </h2>
+              <p className="text-neutral-400 text-lg leading-relaxed mb-8">
+                Setiap kali Anda menggunakan layanan kami, Anda akan mendapatkan Loyalty Points yang dapat ditukarkan dengan berbagai layanan gratis atau diskon eksklusif.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 bg-neutral-900 p-4 rounded-2xl border border-white/5">
+                  <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center shrink-0">
+                    <Scissors className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">Haircut Premium</h4>
+                    <p className="text-sm text-neutral-400">+50 Poin</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 bg-neutral-900 p-4 rounded-2xl border border-white/5">
+                  <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
+                    <Gift className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white">Tukar 500 Poin</h4>
+                    <p className="text-sm text-neutral-400">Gratis 1x Hair Styling & Wash</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Promo Member */}
+            <div className="bg-gradient-to-br from-neutral-900 to-neutral-950 p-8 md:p-10 rounded-3xl border border-white/10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -z-0"></div>
+              <h3 className="text-2xl font-black text-white mb-6 relative z-10 flex items-center gap-2">
+                <Tag className="w-6 h-6 text-amber-500" /> Promo Eksklusif Member
+              </h3>
+              
+              <div className="space-y-4 relative z-10">
+                <div className="bg-black/40 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex justify-between items-center group cursor-pointer hover:border-amber-500/50 transition-colors">
+                  <div>
+                    <div className="text-xs font-bold text-amber-500 mb-1 uppercase">Valid sd. 30 Juni</div>
+                    <h4 className="font-bold text-white text-lg">Diskon 20% Pomade</h4>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-amber-500 transition-colors" />
+                </div>
+                <div className="bg-black/40 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex justify-between items-center group cursor-pointer hover:border-amber-500/50 transition-colors">
+                  <div>
+                    <div className="text-xs font-bold text-amber-500 mb-1 uppercase">Khusus Member Gold</div>
+                    <h4 className="font-bold text-white text-lg">Free Head Massage</h4>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-amber-500 transition-colors" />
+                </div>
+                <div className="bg-black/40 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex justify-between items-center group cursor-pointer hover:border-amber-500/50 transition-colors">
+                  <div>
+                    <div className="text-xs font-bold text-amber-500 mb-1 uppercase">Happy Hour (Senin-Kamis)</div>
+                    <h4 className="font-bold text-white text-lg">Double Loyalty Points</h4>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-amber-500 transition-colors" />
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+      {/* APPOINTMENT BOOKING SECTION */}
+      <section id="booking" className="py-24 bg-neutral-900 relative">
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+          <div className="bg-neutral-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row">
+            
+            {/* Booking Decor/Info */}
+            <div className="w-full md:w-5/12 bg-amber-500 p-10 md:p-12 relative overflow-hidden flex flex-col justify-center">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+              <div className="relative z-10">
+                <h2 className="text-3xl md:text-4xl font-black text-neutral-950 mb-4 leading-tight uppercase">Booking Jadwalmu Sekarang</h2>
+                <p className="text-neutral-900 font-medium mb-8">Pilih kapster favoritmu, tentukan waktu yang pas, dan rasakan pengalaman grooming tanpa perlu mengantre panjang.</p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-neutral-900 font-bold">
+                    <CheckCircle2 className="w-5 h-5" /> Konfirmasi instan via Email/WA
+                  </div>
+                  <div className="flex items-center gap-3 text-neutral-900 font-bold">
+                    <CheckCircle2 className="w-5 h-5" /> Reschedule mudah
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Booking Form (Mock) */}
+            <div className="w-full md:w-7/12 p-10 md:p-12">
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Ini adalah preview fitur booking CRM. Jadwal telah disimulasikan.'); }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2">Pilih Layanan</label>
+                    <select className="w-full bg-neutral-900 border border-white/10 text-white p-3.5 rounded-xl outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer">
+                      <option>Haircut Premium</option>
+                      <option>Hair & Beard Trim</option>
+                      <option>Full Grooming Package</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2">Pilih Kapster (Barber)</label>
+                    <select className="w-full bg-neutral-900 border border-white/10 text-white p-3.5 rounded-xl outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer">
+                      <option>Any Barber (Tersedia)</option>
+                      <option>Budi (Master Barber)</option>
+                      <option>Rudi (Senior Barber)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2">Tanggal</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3.5 top-3.5 w-5 h-5 text-neutral-500" />
+                      <input type="date" className="w-full bg-neutral-900 border border-white/10 text-white pl-11 p-3.5 rounded-xl outline-none focus:border-amber-500 transition-colors" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-400 mb-2">Jam Kedatangan</label>
+                    <div className="relative">
+                      <Clock className="absolute left-3.5 top-3.5 w-5 h-5 text-neutral-500" />
+                      <select className="w-full bg-neutral-900 border border-white/10 text-white pl-11 p-3.5 rounded-xl outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer">
+                        <option>10:00 AM</option>
+                        <option>01:00 PM</option>
+                        <option>04:30 PM</option>
+                        <option>07:00 PM</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-black text-lg rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] flex justify-center items-center gap-2 mt-4">
+                  Selesaikan Booking <ChevronRight className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* MEMBER DASHBOARD PREVIEW SECTION */}
+      <section className="py-24 bg-neutral-950 relative border-t border-white/5 overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Satu Akun, <span className="text-blue-500">Kendali Penuh.</span></h2>
+            <p className="text-neutral-400 max-w-xl mx-auto">Masuk ke Portal Member untuk mengelola jadwal, melihat poin, dan riwayat gaya rambut Anda.</p>
+          </div>
+
+          {/* Dashboard UI Mockup */}
+          <div className="max-w-5xl mx-auto bg-neutral-900 rounded-3xl border border-white/10 overflow-hidden shadow-2xl flex flex-col md:flex-row">
+            
+            {/* Sidebar Mock */}
+            <div className="w-full md:w-64 bg-neutral-950 border-r border-white/5 p-6 flex flex-col gap-4">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">R</div>
+                <div>
+                  <h4 className="text-white font-bold text-sm">Reza M.</h4>
+                  <p className="text-xs text-amber-500 font-bold uppercase">Silver Member</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-white bg-blue-600/20 text-blue-500 px-4 py-2.5 rounded-xl font-bold text-sm cursor-pointer">
+                <LayoutDashboard className="w-4 h-4" /> Dashboard
+              </div>
+              <div className="flex items-center gap-3 text-neutral-400 hover:text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors cursor-pointer">
+                <History className="w-4 h-4" /> Riwayat Kunjungan
+              </div>
+              <div className="flex items-center gap-3 text-neutral-400 hover:text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors cursor-pointer">
+                <Award className="w-4 h-4" /> Loyalty Points
+              </div>
+            </div>
+
+            {/* Content Mock */}
+            <div className="flex-1 p-6 md:p-8 bg-neutral-900">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="bg-neutral-950 p-5 rounded-2xl border border-white/5">
+                  <p className="text-neutral-500 text-xs font-bold uppercase mb-1">Total Poin</p>
+                  <h3 className="text-3xl font-black text-amber-500">1,250</h3>
+                </div>
+                <div className="bg-neutral-950 p-5 rounded-2xl border border-white/5">
+                  <p className="text-neutral-500 text-xs font-bold uppercase mb-1">Kunjungan</p>
+                  <h3 className="text-3xl font-black text-white">12 <span className="text-sm font-medium text-neutral-500">Kali</span></h3>
+                </div>
+                <div className="bg-neutral-950 p-5 rounded-2xl border border-white/5">
+                  <p className="text-neutral-500 text-xs font-bold uppercase mb-1">Status Member</p>
+                  <h3 className="text-3xl font-black text-slate-300">Silver</h3>
+                </div>
+              </div>
+
+              <h4 className="text-white font-bold mb-4">Jadwal Mendatang</h4>
+              <div className="bg-neutral-950 p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-blue-500/20 text-blue-500 p-3 rounded-xl">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h5 className="text-white font-bold">Haircut Premium + Wash</h5>
+                    <p className="text-neutral-400 text-sm">Minggu, 28 Jun 2026 • 10:00 AM</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-amber-500/20 text-amber-500 rounded-full text-xs font-bold border border-amber-500/20">Menunggu</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="text-center mt-10">
+            <Link to="/login?type=member" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold transition-colors text-lg">
+              Masuk ke Portal Member <ChevronRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* CUSTOMER FEEDBACK SECTION */}
+      <section className="py-24 bg-neutral-900 border-t border-white/5 relative">
+        <div className="container mx-auto px-4 md:px-8 max-w-4xl text-center">
+          <div className="inline-block px-4 py-1.5 bg-green-500/10 text-green-400 font-bold tracking-wider text-sm rounded-full mb-6 uppercase border border-green-500/20">
+            Berikan Ulasan
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Bagaimana Pengalaman Anda?</h2>
+          <p className="text-neutral-400 mb-10 max-w-xl mx-auto">Masukan Anda sangat berarti bagi kami untuk terus meningkatkan kualitas pelayanan barbershop.</p>
+          
+          <div className="bg-neutral-950 p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl text-left">
+            <form onSubmit={(e) => { e.preventDefault(); alert('Terima kasih! Review Anda telah dikirim (Simulasi fitur CRM).'); }}>
+              <div className="mb-6 text-center">
+                <label className="block text-sm font-bold text-neutral-400 mb-4">Beri Rating</label>
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button 
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className="focus:outline-none hover:scale-110 transition-transform"
+                    >
+                      <Star className={`w-10 h-10 ${star <= feedbackRating ? "fill-amber-500 text-amber-500" : "text-neutral-700"}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-neutral-400 mb-2">Ceritakan Pengalaman Anda</label>
+                <textarea 
+                  rows="4" 
+                  placeholder="Pelayanannya sangat memuaskan..."
+                  className="w-full bg-neutral-900 border border-white/10 text-white p-4 rounded-xl outline-none focus:border-green-500 transition-colors resize-none"
+                  required
+                ></textarea>
+              </div>
+
+              <button type="submit" className="w-full py-4 bg-green-500 hover:bg-green-600 text-neutral-950 font-black text-lg rounded-xl transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] hover:shadow-[0_0_30px_rgba(34,197,94,0.4)] flex justify-center items-center gap-2">
+                Kirim Ulasan <Send className="w-5 h-5" />
+              </button>
+            </form>
           </div>
         </div>
       </section>

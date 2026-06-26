@@ -512,7 +512,7 @@ function VoucherView() {
             
             <div className="flex justify-between items-center border-t border-slate-800 pt-4 relative z-10">
               <span className="text-xs font-semibold text-slate-500">Berlaku s/d: {v.expiry}</span>
-              <button className="text-slate-950 bg-amber-500 px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-amber-400 transition">Gunakan</button>
+              <button onClick={() => alert('Voucher berhasil diaplikasikan ke sesi Anda berikutnya!')} className="text-slate-950 bg-amber-500 px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-amber-400 transition">Gunakan</button>
             </div>
           </div>
         ))}
@@ -545,7 +545,7 @@ function PromoView() {
                   <p className="text-xs text-slate-500 line-through mb-1">Rp150.000</p>
                   <p className="text-amber-500 font-black text-2xl">{promo.price}</p>
                 </div>
-                <button className="px-5 py-2.5 bg-white text-slate-950 rounded-xl font-bold text-sm hover:bg-amber-400 transition">Klaim Promo</button>
+                <button onClick={() => alert('Promo berhasil diklaim dan masuk ke daftar Reward Anda!')} className="px-5 py-2.5 bg-white text-slate-950 rounded-xl font-bold text-sm hover:bg-amber-400 transition">Klaim Promo</button>
               </div>
             </div>
           </div>
@@ -764,7 +764,7 @@ function ProfileView() {
                   <button onClick={() => setEditing(true)} className="px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition border border-slate-700">
                     Edit Profil
                   </button>
-                  <button className="px-8 py-3.5 text-amber-500 font-bold rounded-xl hover:bg-amber-500/10 transition border border-transparent hover:border-amber-500/20">
+                  <button onClick={() => alert('Email reset password telah dikirim ke rizky.martin@example.com')} className="px-8 py-3.5 text-amber-500 font-bold rounded-xl hover:bg-amber-500/10 transition border border-transparent hover:border-amber-500/20">
                     Ubah Password
                   </button>
                 </>

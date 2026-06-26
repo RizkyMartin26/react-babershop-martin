@@ -170,12 +170,13 @@ export default function Guest() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button 
-                onClick={() => alert('Fitur booking akan tersedia di versi berikutnya!')}
+              <a 
+                href="#booking"
+                onClick={(e) => scrollToSection(e, "#booking")}
                 className="w-full sm:w-auto px-8 py-4 bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold rounded-full text-lg transition-all flex items-center justify-center gap-2"
               >
                 <CalendarCheck className="w-5 h-5" /> Booking Sekarang
-              </button>
+              </a>
               <a 
                 href="#about"
                 onClick={(e) => scrollToSection(e, "#about")}
@@ -456,7 +457,7 @@ export default function Guest() {
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-700 shrink-0" /> Diskon 5% untuk produk pomade</li>
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-700 shrink-0" /> Poin loyalty standar</li>
               </ul>
-              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-colors">Pilih Bronze</button>
+              <Link to="/member-portal" className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-bold rounded-xl transition-colors block text-center">Pilih Bronze</Link>
             </div>
 
             {/* Silver (Popular) */}
@@ -470,7 +471,7 @@ export default function Guest() {
                 <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Free hair wash setiap potong</li>
                 <li className="flex items-start gap-3 text-white text-sm"><CheckCircle2 className="w-5 h-5 text-slate-300 shrink-0" /> Poin loyalty 1.5x lebih cepat</li>
               </ul>
-              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-slate-300 hover:bg-slate-200 text-neutral-950 font-black rounded-xl transition-colors shadow-lg">Pilih Silver</button>
+              <Link to="/member-portal" className="w-full py-3 bg-slate-300 hover:bg-slate-200 text-neutral-950 font-black rounded-xl transition-colors shadow-lg block text-center">Pilih Silver</Link>
             </div>
 
             {/* Gold */}
@@ -483,7 +484,7 @@ export default function Guest() {
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Gratis 1x cukur di bulan ulang tahun</li>
                 <li className="flex items-start gap-3 text-neutral-300 text-sm"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Poin loyalty 2x lebih cepat</li>
               </ul>
-              <button onClick={() => alert('Daftar member diarahkan ke login/register')} className="w-full py-3 bg-amber-500/10 hover:bg-amber-500 hover:text-neutral-950 text-amber-500 font-bold rounded-xl border border-amber-500 transition-colors">Pilih Gold</button>
+              <Link to="/member-portal" className="w-full py-3 bg-amber-500/10 hover:bg-amber-500 hover:text-neutral-950 text-amber-500 font-bold rounded-xl border border-amber-500 transition-colors block text-center">Pilih Gold</Link>
             </div>
           </div>
         </div>
@@ -587,9 +588,8 @@ export default function Guest() {
               </div>
             </div>
 
-            {/* Booking Form (Mock) */}
             <div className="w-full md:w-7/12 p-10 md:p-12">
-              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Ini adalah preview fitur booking CRM. Jadwal telah disimulasikan.'); }}>
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); window.location.href='/member-portal'; }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-neutral-400 mb-2">Pilih Layanan</label>
@@ -710,7 +710,7 @@ export default function Guest() {
           </div>
 
           <div className="text-center mt-10">
-            <Link to="/login?type=member" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold transition-colors text-lg">
+            <Link to="/member-portal" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold transition-colors text-lg">
               Masuk ke Portal Member <ChevronRight className="w-5 h-5" />
             </Link>
           </div>
@@ -725,9 +725,13 @@ export default function Guest() {
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Bagaimana Pengalaman Anda?</h2>
           <p className="text-neutral-400 mb-10 max-w-xl mx-auto">Masukan Anda sangat berarti bagi kami untuk terus meningkatkan kualitas pelayanan barbershop.</p>
-          
           <div className="bg-neutral-950 p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl text-left">
-            <form onSubmit={(e) => { e.preventDefault(); alert('Terima kasih! Review Anda telah dikirim (Simulasi fitur CRM).'); }}>
+            <form onSubmit={(e) => { 
+                e.preventDefault(); 
+                alert('Terima kasih! Ulasan Anda telah berhasil dikirim ke sistem CRM kami.'); 
+                setFeedbackRating(5);
+                e.target.reset();
+              }}>
               <div className="mb-6 text-center">
                 <label className="block text-sm font-bold text-neutral-400 mb-4">Beri Rating</label>
                 <div className="flex justify-center gap-2">

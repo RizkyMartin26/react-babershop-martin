@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Mail, Lock, Scissors, AlertCircle, UserCircle2, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Scissors, AlertCircle, UserCircle2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../../supabase";
 
 export default function Login() {
@@ -12,6 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loginType, setLoginType] = useState(initialType); // 'admin' or 'member'
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -148,13 +149,20 @@ export default function Login() {
             <div className="relative">
               <Lock className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
+                className="w-full pl-12 pr-12 py-4 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-4 text-gray-500 hover:text-amber-500 transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
 
             {/* Remember & Forgot */}

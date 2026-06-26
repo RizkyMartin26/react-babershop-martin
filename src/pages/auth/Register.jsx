@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Mail, Lock, Phone, Scissors, AlertCircle } from "lucide-react";
+import { User, Mail, Lock, Phone, Scissors, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../../supabase";
 
 export default function Register() {
@@ -13,6 +13,8 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -146,27 +148,41 @@ export default function Register() {
             <div className="relative">
               <Lock className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password (Min. 6 Karakter)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
+                className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
                 required
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-4 text-gray-500 hover:text-amber-500 transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
 
             {/* Confirm Password */}
             <div className="relative">
               <Lock className="absolute left-4 top-4 text-gray-500 w-5 h-5" />
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Konfirmasi Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
+                className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-4 text-gray-500 hover:text-amber-500 transition-colors focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
 
             {/* Button */}

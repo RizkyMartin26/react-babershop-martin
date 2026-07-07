@@ -25,39 +25,28 @@ export default function Login() {
     setErrorMsg("");
 
     try {
-      // --- LOCAL STORAGE FALLBACK FOR MOCK/DEMO ---
-      const mockUsers = JSON.parse(localStorage.getItem("mock_users") || "[]");
-      const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-
-      if (foundUser) {
-        localStorage.setItem("mock_session_active", "true");
-        if (loginType === "member") {
-          navigate("/member-portal");
-        } else {
-          navigate("/dashboard");
-        }
-        return; // Success locally!
-      }
-      
-      // If not in local storage, try Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        // FOR DEMO PURPOSES: Allow login even if Supabase fails (e.g., email not confirmed)
-        console.warn("Supabase auth failed. Using demo bypass.", error);
-        localStorage.setItem("mock_session_active", "true");
-        if (loginType === "member") {
-          navigate("/member-portal");
+        // Tampilkan pesan error yang spesifik dan jelas
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setErrorMsg("Email belum dikonfirmasi. Cek inbox email Anda dan klik link konfirmasi, atau nonaktifkan 'Confirm email' di Supabase Dashboard > Authentication > Settings.");
+        } else if (error.message.toLowerCase().includes("invalid login credentials")) {
+          setErrorMsg("Email atau password salah. Pastikan Anda sudah mendaftar terlebih dahulu.");
+        } else if (error.message.toLowerCase().includes("user not found")) {
+          setErrorMsg("Akun tidak ditemukan. Silakan daftar terlebih dahulu.");
         } else {
-          navigate("/dashboard");
+          setErrorMsg(error.message);
         }
         return;
       }
 
-      // Navigate based on login type
+      // Login sukses
+      localStorage.setItem("mock_session_active", "true");
+
       if (loginType === "member") {
         navigate("/member-portal");
       } else {

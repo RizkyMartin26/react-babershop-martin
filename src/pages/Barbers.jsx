@@ -1,38 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Search, Star, Phone, Award, X } from "lucide-react";
+import { supabase } from "../supabase";
+import Pagination from "../components/Pagination";
 
 export default function Barbers() {
-
-  const mockNames = ["Michael Jordan", "David Beckham", "Ryan Reynolds", "Chris Evans", "Tom Holland", "Zayn Malik", "Harry Styles", "Justin Bieber", "Shawn Mendes", "Chris Hemsworth", "Robert Downey", "Leonardo DiCaprio", "Brad Pitt", "Johnny Depp", "Will Smith", "Keanu Reeves", "Dwayne Johnson", "Jason Statham", "Vin Diesel", "Tom Cruise", "Ryan Gosling", "Jake Gyllenhaal", "Christian Bale", "Hugh Jackman", "Zac Efron", "Channing Tatum", "Liam Hemsworth", "Mark Wahlberg", "Matt Damon", "Ben Affleck"];
-  const roles = ["Classic & Fade", "Modern Style", "Beard Expert", "Hair Coloring", "Hair Tattoo", "Kids Haircut", "Scissor Cut", "Hot Towel Shave"];
-  
-  const unsplashIds = [
-    "1506794778202-cad84cf45f1d", "1507003211169-0a1dd7228f2d", "1500648767791-00dcc994a43e", 
-    "1519085360753-af0119f7cbe7", "1492562080023-ab3db95bfbce", "1531427186611-ecfd6d936c79", 
-    "1504257432389-52343af065f6", "1480455624313-e27b44cb8d5b", "1507591064344-4c6ce005b128", 
-    "1543852786-1cf6624b9987"
-  ];
-  
-  const initialBarbers = Array.from({ length: 30 }, (_, i) => ({
-    id: i + 1,
-    name: mockNames[i] || `Barber ${i + 1}`,
-    role: roles[i % roles.length],
-    rating: (Math.random() * (5 - 4.2) + 4.2).toFixed(1),
-    bookings: Math.floor(Math.random() * 300) + 50,
-    experience: `${Math.floor(Math.random() * 10) + 2} years`,
-    phone: `+62 81${Math.floor(Math.random() * 90000000) + 10000000}`,
-    status: Math.random() > 0.3 ? "Available" : "Busy",
-    initials: (mockNames[i] || `B ${i + 1}`).split(' ').map(n => n[0]).join(''),
-    image: `https://images.unsplash.com/photo-${unsplashIds[i % unsplashIds.length]}?q=80&w=300&auto=format&fit=crop`
-  }));
-
-  const [barbers, setBarbers] = useState(initialBarbers);
+  const [barbers, setBarbers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedBarber, setSelectedBarber] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const emptyForm = {
     name: "",
@@ -45,41 +26,79 @@ export default function Barbers() {
     initials: "",
   };
 
-  const [formData, setFormData] =
-    useState(emptyForm);
+  const [formData, setFormData] = useState(emptyForm);
+
+  const fetchBarbers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("barbers").select("*");
+      if (error) throw error;
+      const sorted = (data || []).sort((a, b) => a.id - b.id);
+      setBarbers(sorted);
+    } catch (err) {
+      console.error("Error fetching barbers:", err);
+      alert("Gagal mengambil data barber.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBarbers();
+  }, []);
 
   // SEARCH
-  const filteredBarbers =
-    barbers.filter((barber) =>
-      barber.name
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
+  const filteredBarbers = barbers.filter((barber) =>
+    (barber.name || "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(filteredBarbers.length / itemsPerPage);
+  const paginatedBarbers = filteredBarbers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // CREATE
-  const handleCreate = () => {
-
-    if (
-      !formData.name ||
-      !formData.role
-    ) {
+  const handleCreate = async () => {
+    if (!formData.name || !formData.role) {
       alert("Please fill all fields");
       return;
     }
 
+    const initials = formData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const unsplashIds = [
+      "1506794778202-cad84cf45f1d", "1507003211169-0a1dd7228f2d", "1500648767791-00dcc994a43e", 
+      "1519085360753-af0119f7cbe7", "1492562080023-ab3db95bfbce", "1531427186611-ecfd6d936c79"
+    ];
+    const randomImg = `https://images.unsplash.com/photo-${unsplashIds[Math.floor(Math.random() * unsplashIds.length)]}?q=80&w=300&auto=format&fit=crop`;
+
     const newBarber = {
-      ...formData,
-      id: barbers.length + 1,
+      name: formData.name,
+      role: formData.role,
+      rating: parseFloat(formData.rating) || 5.0,
+      bookings: parseInt(formData.bookings) || 0,
+      experience: formData.experience || "2 years",
+      phone: formData.phone || "",
+      status: formData.status || "Available",
+      initials,
+      image: formData.image || randomImg
     };
 
-    setBarbers([
-      ...barbers,
-      newBarber,
-    ]);
-
-    setFormData(emptyForm);
-
-    setShowCreateModal(false);
+    try {
+      const { error } = await supabase.from("barbers").insert([newBarber]);
+      if (error) throw error;
+      
+      setFormData(emptyForm);
+      setShowCreateModal(false);
+      fetchBarbers();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menambahkan barber.");
+    }
   };
 
   // EDIT
@@ -90,18 +109,35 @@ export default function Barbers() {
   };
 
   // UPDATE
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
+    if (!formData.name || !formData.role) {
+      alert("Please fill all fields");
+      return;
+    }
 
-    const updated =
-      barbers.map((barber) =>
-        barber.id === selectedBarber.id
-          ? formData
-          : barber
-      );
+    const initials = formData.name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-    setBarbers(updated);
+    try {
+      const { error } = await supabase.from("barbers").update({
+        name: formData.name,
+        role: formData.role,
+        rating: parseFloat(formData.rating) || 5.0,
+        bookings: parseInt(formData.bookings) || 0,
+        experience: formData.experience || "2 years",
+        phone: formData.phone || "",
+        status: formData.status || "Available",
+        initials,
+        image: formData.image
+      }).eq("id", selectedBarber.id);
 
-    setShowEditModal(false);
+      if (error) throw error;
+
+      setShowEditModal(false);
+      fetchBarbers();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal memperbarui data barber.");
+    }
   };
 
   // DELETE
@@ -110,17 +146,17 @@ export default function Barbers() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from("barbers").delete().eq("id", selectedBarber.id);
+      if (error) throw error;
 
-    const filtered =
-      barbers.filter(
-        (barber) =>
-          barber.id !== selectedBarber.id
-      );
-
-    setBarbers(filtered);
-
-    setShowDeleteModal(false);
+      setShowDeleteModal(false);
+      fetchBarbers();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus barber.");
+    }
   };
 
   // VIEW
@@ -183,7 +219,7 @@ export default function Barbers() {
 
       {/* CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {filteredBarbers.map((barber) => (
+        {paginatedBarbers.map((barber) => (
           <div
             key={barber.id}
             className="group relative bg-white rounded-3xl p-6 transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.2)] hover:-translate-y-2 border border-gray-100 hover:border-amber-200 cursor-pointer overflow-hidden z-10"
@@ -260,6 +296,15 @@ export default function Barbers() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* PAGINATION */}
+      <div className="mt-8">
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* CREATE + EDIT MODAL */}

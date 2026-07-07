@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { supabase } from "../supabase";
 import {
   Plus,
   Search,
@@ -15,47 +16,11 @@ import {
   User,
   Scissors
 } from "lucide-react";
-
-// --- 30 DUMMY DATA ---
-const barbers = ["Michael Jordan", "David Beckham", "Ryan Reynolds", "Chris Evans", "Tom Hardy"];
-const services = ["Premium Haircut", "Classic Haircut + Beard", "Hot Towel Shave", "Hair Coloring", "Kids Haircut"];
-const statuses = ["Confirmed", "Pending", "Completed", "Cancelled"];
-
-const initialBookings = Array.from({ length: 30 }).map((_, index) => {
-  const fNames = ["Alex", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew"];
-  const lNames = ["Smith", "Wilson", "Brown", "Davis", "Miller", "Taylor", "Anderson", "Thomas", "Jackson", "White"];
-  
-  const customer = `${fNames[index % fNames.length]} ${lNames[(index * 2) % lNames.length]}`;
-  const barber = barbers[index % barbers.length];
-  const service = services[index % services.length];
-  
-  // Distribute statuses: mostly confirmed/completed, some pending, few cancelled
-  let status = "Confirmed";
-  if (index % 5 === 0) status = "Pending";
-  if (index % 4 === 0) status = "Completed";
-  if (index % 12 === 0) status = "Cancelled";
-
-  // Generate a random date within the next 30 days
-  const dateObj = new Date();
-  dateObj.setDate(dateObj.getDate() + (index % 15) - 2); 
-  const date = dateObj.toISOString().split('T')[0];
-  
-  const hour = 9 + (index % 10);
-  const time = `${hour.toString().padStart(2, '0')}:${index % 2 === 0 ? '00' : '30'}`;
-
-  return {
-    id: `BK${String(1001 + index).padStart(4, '0')}`,
-    customer,
-    barber,
-    service,
-    date,
-    time,
-    status,
-  };
-});
+import Pagination from "../components/Pagination";
 
 export default function Booking() {
-  const [bookingData, setBookingData] = useState(initialBookings);
+  const [bookingData, setBookingData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef(null);
 
@@ -91,12 +56,31 @@ export default function Booking() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("bookings").select("*");
+      if (error) throw error;
+      const sorted = (data || []).sort((a, b) => b.id.localeCompare(a.id));
+      setBookingData(sorted);
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
+      showToast("Gagal mengambil data booking!", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
   // SEARCH FILTER
   const filteredBookings = bookingData.filter((item) =>
-    item.customer.toLowerCase().includes(search.toLowerCase()) ||
-    item.service.toLowerCase().includes(search.toLowerCase()) ||
-    item.barber.toLowerCase().includes(search.toLowerCase()) ||
-    item.id.toLowerCase().includes(search.toLowerCase())
+    (item.customer || "").toLowerCase().includes(search.toLowerCase()) ||
+    (item.service || "").toLowerCase().includes(search.toLowerCase()) ||
+    (item.barber || "").toLowerCase().includes(search.toLowerCase()) ||
+    (item.id || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // PAGINATION LOGIC
@@ -116,21 +100,35 @@ export default function Booking() {
   };
 
   // CREATE
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.customer || !formData.barber || !formData.service || !formData.date || !formData.time) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
     }
 
+    const newId = `BK${String(1000 + bookingData.length + 1).padStart(4, '0')}`;
     const newBooking = {
-      ...formData,
-      id: `BK${String(1000 + bookingData.length + 1).padStart(4, '0')}`,
+      id: newId,
+      customer: formData.customer,
+      barber: formData.barber,
+      service: formData.service,
+      date: formData.date,
+      time: formData.time,
+      status: formData.status || "Pending",
     };
 
-    setBookingData([newBooking, ...bookingData]);
-    setFormData(emptyForm);
-    setShowCreateModal(false);
-    showToast("Jadwal booking baru berhasil ditambahkan!");
+    try {
+      const { error } = await supabase.from("bookings").insert([newBooking]);
+      if (error) throw error;
+
+      setFormData(emptyForm);
+      setShowCreateModal(false);
+      showToast("Jadwal booking baru berhasil ditambahkan!");
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menambahkan booking!", "error");
+    }
   };
 
   // EDIT
@@ -141,19 +139,31 @@ export default function Booking() {
   };
 
   // UPDATE
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!formData.customer || !formData.barber || !formData.service || !formData.date || !formData.time) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
     }
 
-    const updated = bookingData.map((item) =>
-      item.id === selectedBooking.id ? formData : item
-    );
+    try {
+      const { error } = await supabase.from("bookings").update({
+        customer: formData.customer,
+        barber: formData.barber,
+        service: formData.service,
+        date: formData.date,
+        time: formData.time,
+        status: formData.status || "Pending",
+      }).eq("id", selectedBooking.id);
 
-    setBookingData(updated);
-    setShowEditModal(false);
-    showToast(`Data booking ${formData.id} berhasil diperbarui!`);
+      if (error) throw error;
+
+      setShowEditModal(false);
+      showToast(`Data booking ${formData.id} berhasil diperbarui!`);
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memperbarui data booking!", "error");
+    }
   };
 
   // DELETE
@@ -162,15 +172,22 @@ export default function Booking() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const filtered = bookingData.filter((item) => item.id !== selectedBooking.id);
-    setBookingData(filtered);
-    setShowDeleteModal(false);
-    showToast(`Booking ${selectedBooking.id} berhasil dihapus!`);
-    
-    // Adjust pagination if needed
-    if (paginatedBookings.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from("bookings").delete().eq("id", selectedBooking.id);
+      if (error) throw error;
+
+      setShowDeleteModal(false);
+      showToast(`Booking ${selectedBooking.id} berhasil dihapus!`);
+      fetchBookings();
+      
+      // Adjust pagination if needed
+      if (paginatedBookings.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menghapus booking!", "error");
     }
   };
 
@@ -311,55 +328,11 @@ export default function Booking() {
         )}
 
         {/* PAGINATION CONTROLS */}
-        {totalPages > 1 && (
-          <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col md:flex-row items-center justify-between gap-4 mt-auto">
-            <p className="text-sm text-gray-500 font-medium">
-              Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredBookings.length)}</span> dari <span className="font-bold text-gray-900">{filteredBookings.length}</span> jadwal
-            </p>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }).map((_, idx) => {
-                  const page = idx + 1;
-                  if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                          currentPage === page
-                            ? "bg-amber-500 text-slate-950 shadow-md"
-                            : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return <span key={page} className="px-1 text-gray-400 font-bold">...</span>;
-                  }
-                  return null;
-                })}
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {/* MODAL: CREATE / EDIT */}

@@ -9,7 +9,6 @@ import {
   Users,
   Settings,
   Package,
-  Component,
   Crown,
   Megaphone,
   MessageSquare
@@ -45,7 +44,6 @@ export default function Sidebar() {
     {
       title: "SISTEM",
       items: [
-        { path: "/components", icon: Component, label: "Components" },
         { path: "/settings", icon: Settings, label: "Settings" },
         { path: "/users", icon: Users, label: "Manage Users" }
       ]

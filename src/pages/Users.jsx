@@ -14,6 +14,7 @@ import {
   Database,
   Lock
 } from "lucide-react";
+import Pagination from "../components/Pagination";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -21,6 +22,10 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [isMock, setIsMock] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Modals status
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -66,6 +71,17 @@ export default function Users() {
       u.email?.toLowerCase().includes(search.toLowerCase()) ||
       u.phone?.includes(search)
   );
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   // Create User
   const handleCreate = async (e) => {
@@ -308,7 +324,7 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -381,6 +397,17 @@ export default function Users() {
           </div>
         )}
       </div>
+
+      {/* PAGINATION */}
+      {!loading && totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
 
       {/* CREATE MODAL */}
       {showCreateModal && (

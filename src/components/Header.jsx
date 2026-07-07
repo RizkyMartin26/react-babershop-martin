@@ -9,15 +9,39 @@ export default function Header() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem("userProfile");
-    return saved ? JSON.parse(saved) : {
-      name: "Martin Barbershop",
-      email: "martin@barbershop.com",
-      avatar: ""
-    };
+  const [profile, setProfile] = useState({
+    name: "Martin Barbershop",
+    email: "martin@barbershop.com",
+    avatar: ""
   });
   const [editData, setEditData] = useState(profile);
+
+  // Load authenticated user profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: dbUser } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          const loadedProfile = {
+            name: dbUser?.name || user.user_metadata?.name || "User",
+            email: dbUser?.email || user.email,
+            avatar: dbUser?.avatar || ""
+          };
+          setProfile(loadedProfile);
+          setEditData(loadedProfile);
+        }
+      } catch (err) {
+        console.error("Error loading profile from Supabase:", err);
+      }
+    };
+    loadProfile();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -37,10 +61,27 @@ export default function Header() {
     navigate('/');
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setProfile(editData);
-    localStorage.setItem("userProfile", JSON.stringify(editData));
     setIsEditModalOpen(false);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Update Supabase auth metadata
+        await supabase.auth.updateUser({
+          data: { name: editData.name }
+        });
+        
+        // Update public users table
+        await supabase.from("users").update({
+          name: editData.name,
+          avatar: editData.avatar
+        }).eq("id", user.id);
+      }
+    } catch (err) {
+      console.error("Error updating profile in Supabase:", err);
+    }
   };
 
   const handleImageUpload = (e) => {

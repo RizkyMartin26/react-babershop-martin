@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import initialProducts from "./data/products";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -55,9 +56,151 @@ const defaultMockUsers = [
   }
 ];
 
-// Initialize mock users in localStorage if empty
+// Helper generators for mock tables
+const getMockBarbers = () => {
+  const mockNames = ["Michael Jordan", "David Beckham", "Ryan Reynolds", "Chris Evans", "Tom Holland", "Zayn Malik", "Harry Styles", "Justin Bieber", "Shawn Mendes", "Chris Hemsworth", "Robert Downey", "Leonardo DiCaprio", "Brad Pitt", "Johnny Depp", "Will Smith", "Keanu Reeves", "Dwayne Johnson", "Jason Statham", "Vin Diesel", "Tom Cruise", "Ryan Gosling", "Jake Gyllenhaal", "Christian Bale", "Hugh Jackman", "Zac Efron", "Channing Tatum", "Liam Hemsworth", "Mark Wahlberg", "Matt Damon", "Ben Affleck"];
+  const roles = ["Classic & Fade", "Modern Style", "Beard Expert", "Hair Coloring", "Hair Tattoo", "Kids Haircut", "Scissor Cut", "Hot Towel Shave"];
+  const unsplashIds = [
+    "1506794778202-cad84cf45f1d", "1507003211169-0a1dd7228f2d", "1500648767791-00dcc994a43e", 
+    "1519085360753-af0119f7cbe7", "1492562080023-ab3db95bfbce", "1531427186611-ecfd6d936c79", 
+    "1504257432389-52343af065f6", "1480455624313-e27b44cb8d5b", "1507591064344-4c6ce005b128", 
+    "1543852786-1cf6624b9987"
+  ];
+  return Array.from({ length: 30 }, (_, i) => ({
+    id: i + 1,
+    name: mockNames[i] || `Barber ${i + 1}`,
+    role: roles[i % roles.length],
+    rating: parseFloat((Math.random() * (5 - 4.2) + 4.2).toFixed(1)),
+    bookings: Math.floor(Math.random() * 300) + 50,
+    experience: `${Math.floor(Math.random() * 10) + 2} years`,
+    phone: `+62 81${Math.floor(Math.random() * 90000000) + 10000000}`,
+    status: Math.random() > 0.3 ? "Available" : "Busy",
+    initials: (mockNames[i] || `B ${i + 1}`).split(' ').map(n => n[0]).join(''),
+    image: `https://images.unsplash.com/photo-${unsplashIds[i % unsplashIds.length]}?q=80&w=300&auto=format&fit=crop`,
+    created_at: new Date().toISOString()
+  }));
+};
+
+const getMockCustomers = () => {
+  const firstNames = ["John", "Michael", "David", "Ryan", "Chris", "Kevin", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Brian"];
+  const lastNames = ["Doe", "Smith", "Beckham", "Reynolds", "Evans", "Hart", "Bond", "Stark", "Wayne", "Kent", "Parker", "Banner", "Odinson", "Rogers", "Barton", "Romanoff", "Fury", "Hill", "Coulson", "Carter"];
+  return Array.from({ length: 30 }).map((_, index) => {
+    const fName = firstNames[index % firstNames.length];
+    const lName = lastNames[(index * 3) % lastNames.length];
+    const visits = Math.floor(Math.random() * 40) + 1;
+    const status = visits > 15 ? "VIP" : "Regular";
+    const phoneEnd = String(1000 + index * 111).padStart(4, '0');
+    return {
+      id: index + 1,
+      name: `${fName} ${lName}`,
+      email: `${fName.toLowerCase()}.${lName.toLowerCase()}@example.com`,
+      phone: `+62 812-${String(100 + index).padStart(4, '0')}-${phoneEnd}`,
+      visits: visits,
+      status: status,
+      initials: `${fName[0]}${lName[0]}`,
+      created_at: new Date().toISOString()
+    };
+  });
+};
+
+const getMockServices = () => {
+  const serviceNames = [
+    "Classic Haircut", "Premium Haircut", "Beard Trim & Line-up", "Hair Coloring (Black)", "Hot Towel Shave",
+    "Hair Wash & Styling", "Kids Haircut", "Father & Son Combo", "VIP Grooming Package", "Keratin Treatment",
+    "Scalp Massage", "Buzz Cut & Taper", "Fade Haircut", "Pompadour Styling", "Mullet Styling",
+    "Hair Tattoo & Design", "Mustache Grooming", "Eyebrow Threading", "Facial Treatment", "Express Haircut",
+    "Wedding Groom Package", "Hair Highlights", "Perming Style", "Anti-Dandruff Treatment", "Hair Loss Therapy",
+    "Executive Shave", "Beard Coloring", "Ear Wax Removal", "Full Head Shave", "Gentleman's Polish"
+  ];
+  const imageIds = [
+    "1621605815971-fbc98d665033", "1517832606299-7ae9b720a186", "1519699047748-de8e457a634e", 
+    "1521590832167-7bcbfaa6381f", "1585747860715-2ba37e788b70", "1519014816548-bf5fe059798b", 
+    "1593702275687-f8b402bf1fb5", "1600626333486-57889a7776f4", "1599351431202-1e0f0137899a", 
+    "1503736334156-8c12148ce769", "1532798442725-41036acc7489", "1605497788044-5a32c7078486"
+  ];
+  return Array.from({ length: 30 }).map((_, index) => {
+    const basePrice = 50 + (index % 15) * 20;
+    const popular = index === 0 || index === 1 || index === 4 || index === 8 || index === 12;
+    const durationStr = `${20 + (index % 5) * 10} min`;
+    return {
+      id: index + 1,
+      image: `https://images.unsplash.com/photo-${imageIds[index % imageIds.length]}?w=800&q=80`,
+      title: serviceNames[index],
+      price: `Rp ${basePrice},000`,
+      duration: durationStr,
+      popular: popular,
+      created_at: new Date().toISOString()
+    };
+  });
+};
+
+const getMockBookings = () => {
+  const barbers = ["Michael Jordan", "David Beckham", "Ryan Reynolds", "Chris Evans", "Tom Hardy"];
+  const services = ["Premium Haircut", "Classic Haircut + Beard", "Hot Towel Shave", "Hair Coloring", "Kids Haircut"];
+  return Array.from({ length: 30 }).map((_, index) => {
+    const fNames = ["Alex", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew"];
+    const lNames = ["Smith", "Wilson", "Brown", "Davis", "Miller", "Taylor", "Anderson", "Thomas", "Jackson", "White"];
+    const customer = `${fNames[index % fNames.length]} ${lNames[(index * 2) % lNames.length]}`;
+    const barber = barbers[index % barbers.length];
+    const service = services[index % services.length];
+    let status = "Confirmed";
+    if (index % 5 === 0) status = "Pending";
+    if (index % 4 === 0) status = "Completed";
+    if (index % 12 === 0) status = "Cancelled";
+    const dateObj = new Date();
+    dateObj.setDate(dateObj.getDate() + (index % 15) - 2); 
+    const date = dateObj.toISOString().split('T')[0];
+    const hour = 9 + (index % 10);
+    const time = `${hour.toString().padStart(2, '0')}:${index % 2 === 0 ? '00' : '30'}`;
+    return {
+      id: `BK${String(1001 + index).padStart(4, '0')}`,
+      customer,
+      barber,
+      service,
+      date,
+      time,
+      status,
+      created_at: new Date().toISOString()
+    };
+  });
+};
+
+const getMockMembers = () => {
+  return [
+    { id: "MB001", name: "John Doe", level: "Gold", points: 1200, totalSpent: "Rp 3.500.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB002", name: "Michael Smith", level: "Silver", points: 850, totalSpent: "Rp 2.100.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB003", name: "David Beckham", level: "Bronze", points: 450, totalSpent: "Rp 950.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB004", name: "Ryan Reynolds", level: "Gold", points: 1800, totalSpent: "Rp 5.400.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB005", name: "Cristiano Ronaldo", level: "Gold", points: 2500, totalSpent: "Rp 8.200.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB006", name: "Lionel Messi", level: "Gold", points: 2200, totalSpent: "Rp 7.100.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB007", name: "Neymar Junior", level: "Silver", points: 950, totalSpent: "Rp 2.700.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB008", name: "Kylian Mbappe", level: "Silver", points: 800, totalSpent: "Rp 2.300.000", status: "Inactive", created_at: new Date().toISOString() },
+    { id: "MB009", name: "Kevin De Bruyne", level: "Bronze", points: 350, totalSpent: "Rp 800.000", status: "Active", created_at: new Date().toISOString() },
+    { id: "MB010", name: "Erling Haaland", level: "Bronze", points: 400, totalSpent: "Rp 900.000", status: "Active", created_at: new Date().toISOString() }
+  ];
+};
+
+// Initialize mock tables in localStorage if empty
 if (!localStorage.getItem("supabase_mock_users")) {
   localStorage.setItem("supabase_mock_users", JSON.stringify(defaultMockUsers));
+}
+if (!localStorage.getItem("supabase_mock_barbers")) {
+  localStorage.setItem("supabase_mock_barbers", JSON.stringify(getMockBarbers()));
+}
+if (!localStorage.getItem("supabase_mock_customers")) {
+  localStorage.setItem("supabase_mock_customers", JSON.stringify(getMockCustomers()));
+}
+if (!localStorage.getItem("supabase_mock_services")) {
+  localStorage.setItem("supabase_mock_services", JSON.stringify(getMockServices()));
+}
+if (!localStorage.getItem("supabase_mock_products")) {
+  localStorage.setItem("supabase_mock_products", JSON.stringify(initialProducts));
+}
+if (!localStorage.getItem("supabase_mock_bookings")) {
+  localStorage.setItem("supabase_mock_bookings", JSON.stringify(getMockBookings()));
+}
+if (!localStorage.getItem("supabase_mock_members")) {
+  localStorage.setItem("supabase_mock_members", JSON.stringify(getMockMembers()));
 }
 
 // Helper to get/set mock DB tables
@@ -263,6 +406,22 @@ const mockSupabase = {
 
     async getSession() {
       return { data: { session: mockSession }, error: null };
+    },
+
+    async getUser() {
+      if (mockSession?.user) {
+        return { data: { user: mockSession.user }, error: null };
+      }
+      return { data: { user: null }, error: null };
+    },
+
+    async updateUser({ data: metadata }) {
+      if (!mockSession?.user) {
+        return { data: null, error: new Error("Not authenticated") };
+      }
+      mockSession.user.user_metadata = { ...mockSession.user.user_metadata, ...metadata };
+      localStorage.setItem("supabase_mock_session", JSON.stringify(mockSession));
+      return { data: { user: mockSession.user }, error: null };
     },
 
     onAuthStateChange(callback) {

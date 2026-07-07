@@ -34,22 +34,30 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // --- SAVE TO LOCAL STORAGE FOR MOCK/DEMO ---
-      const mockUsers = JSON.parse(localStorage.getItem("mock_users") || "[]");
-      mockUsers.push({ email, password, name: fullName, phone });
-      localStorage.setItem("mock_users", JSON.stringify(mockUsers));
-      
-      try {
-        // Attempt Supabase Auth (Silent fail if not configured)
-        await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name: fullName, phone, role: "customer" }
+      const { data: authData, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name: fullName, phone, role: "customer" }
+        }
+      });
+
+      if (error) throw error;
+
+      // In real Supabase mode, we insert into public.users table as well
+      if (!supabase.isMock && authData?.user) {
+        const { error: dbErr } = await supabase.from("users").insert([
+          {
+            id: authData.user.id,
+            name: fullName,
+            email: email,
+            phone: phone,
+            role: "customer"
           }
-        });
-      } catch (e) {
-        console.warn("Supabase auth failed, but local storage fallback succeeded.", e);
+        ]);
+        if (dbErr) {
+          console.warn("Warning inserting user into public database table:", dbErr);
+        }
       }
 
       setSuccessMsg("Pendaftaran berhasil! Anda akan dialihkan ke halaman login.");

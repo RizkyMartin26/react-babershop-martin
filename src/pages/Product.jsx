@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../supabase";
 import {
   Plus,
   Search,
@@ -14,11 +15,11 @@ import {
   Image as ImageIcon,
   Tag
 } from "lucide-react";
-
-import initialProducts from "../data/products";
+import Pagination from "../components/Pagination";
 
 export default function Product() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef(null);
 
@@ -52,10 +53,29 @@ export default function Product() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) throw error;
+      const sorted = (data || []).sort((a, b) => a.id - b.id);
+      setProducts(sorted);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      showToast("Gagal mengambil data produk!", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   // SEARCH FILTER
   const filteredProducts = products.filter((product) =>
-    product.title.toLowerCase().includes(search.toLowerCase()) ||
-    product.category.toLowerCase().includes(search.toLowerCase())
+    (product.title || "").toLowerCase().includes(search.toLowerCase()) ||
+    (product.category || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // PAGINATION LOGIC
@@ -69,23 +89,33 @@ export default function Product() {
   }, [search]);
 
   // CREATE
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.title || !formData.price || !formData.stock || !formData.image) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
     }
 
     const newProduct = {
-      ...formData,
-      id: Date.now(),
+      title: formData.title,
+      category: formData.category,
       price: parseInt(formData.price.toString().replace(/\D/g,'')) || 0,
       stock: parseInt(formData.stock) || 0,
+      image: formData.image,
+      description: formData.description,
     };
 
-    setProducts([newProduct, ...products]);
-    setFormData(emptyForm);
-    setShowCreateModal(false);
-    showToast("Produk baru berhasil ditambahkan ke katalog!");
+    try {
+      const { error } = await supabase.from("products").insert([newProduct]);
+      if (error) throw error;
+
+      setFormData(emptyForm);
+      setShowCreateModal(false);
+      showToast("Produk baru berhasil ditambahkan ke katalog!");
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menambahkan produk!", "error");
+    }
   };
 
   // EDIT
@@ -100,25 +130,31 @@ export default function Product() {
   };
 
   // UPDATE
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!formData.title || !formData.price || !formData.stock || !formData.image) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
     }
 
-    const updated = products.map((product) =>
-      product.id === selectedProduct.id 
-        ? { 
-            ...formData, 
-            price: parseInt(formData.price.toString().replace(/\D/g,'')) || 0,
-            stock: parseInt(formData.stock) || 0,
-          } 
-        : product
-    );
+    try {
+      const { error } = await supabase.from("products").update({
+        title: formData.title,
+        category: formData.category,
+        price: parseInt(formData.price.toString().replace(/\D/g,'')) || 0,
+        stock: parseInt(formData.stock) || 0,
+        image: formData.image,
+        description: formData.description,
+      }).eq("id", selectedProduct.id);
 
-    setProducts(updated);
-    setShowEditModal(false);
-    showToast(`Produk "${formData.title}" berhasil diperbarui!`);
+      if (error) throw error;
+
+      setShowEditModal(false);
+      showToast(`Produk "${formData.title}" berhasil diperbarui!`);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memperbarui produk!", "error");
+    }
   };
 
   // DELETE
@@ -127,15 +163,22 @@ export default function Product() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const filtered = products.filter((product) => product.id !== selectedProduct.id);
-    setProducts(filtered);
-    setShowDeleteModal(false);
-    showToast(`Produk "${selectedProduct.title}" berhasil dihapus!`);
-    
-    // Adjust pagination if needed
-    if (paginatedProducts.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from("products").delete().eq("id", selectedProduct.id);
+      if (error) throw error;
+
+      setShowDeleteModal(false);
+      showToast(`Produk "${selectedProduct.title}" berhasil dihapus!`);
+      fetchProducts();
+      
+      // Adjust pagination if needed
+      if (paginatedProducts.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menghapus produk!", "error");
     }
   };
 
@@ -294,55 +337,11 @@ export default function Product() {
       )}
 
       {/* PAGINATION CONTROLS */}
-      {totalPages > 1 && (
-        <div className="mt-auto flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">
-            Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredProducts.length)}</span> dari <span className="font-bold text-gray-900">{filteredProducts.length}</span> produk
-          </p>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1;
-                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                        currentPage === page
-                          ? "bg-amber-500 text-slate-950 shadow-md"
-                          : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="px-1 text-gray-400 font-bold">...</span>;
-                }
-                return null;
-              })}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* MODAL: CREATE / EDIT */}
       {(showCreateModal || showEditModal) && (

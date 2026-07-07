@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { supabase } from "../supabase";
 import {
   Plus,
   Search,
@@ -14,41 +15,11 @@ import {
   Image as ImageIcon,
   Star
 } from "lucide-react";
-
-// --- 30 DUMMY DATA ---
-const serviceNames = [
-  "Classic Haircut", "Premium Haircut", "Beard Trim & Line-up", "Hair Coloring (Black)", "Hot Towel Shave",
-  "Hair Wash & Styling", "Kids Haircut", "Father & Son Combo", "VIP Grooming Package", "Keratin Treatment",
-  "Scalp Massage", "Buzz Cut & Taper", "Fade Haircut", "Pompadour Styling", "Mullet Styling",
-  "Hair Tattoo & Design", "Mustache Grooming", "Eyebrow Threading", "Facial Treatment", "Express Haircut",
-  "Wedding Groom Package", "Hair Highlights", "Perming Style", "Anti-Dandruff Treatment", "Hair Loss Therapy",
-  "Executive Shave", "Beard Coloring", "Ear Wax Removal", "Full Head Shave", "Gentleman's Polish"
-];
-
-const imageIds = [
-  "1621605815971-fbc98d665033", "1517832606299-7ae9b720a186", "1519699047748-de8e457a634e", 
-  "1521590832167-7bcbfaa6381f", "1585747860715-2ba37e788b70", "1519014816548-bf5fe059798b", 
-  "1593702275687-f8b402bf1fb5", "1600626333486-57889a7776f4", "1599351431202-1e0f0137899a", 
-  "1503736334156-8c12148ce769", "1532798442725-41036acc7489", "1605497788044-5a32c7078486"
-];
-
-const initialServices = Array.from({ length: 30 }).map((_, index) => {
-  const basePrice = 50 + (index % 15) * 20;
-  const popular = index === 0 || index === 1 || index === 4 || index === 8 || index === 12;
-  const durationStr = `${20 + (index % 5) * 10} min`;
-  
-  return {
-    id: index + 1,
-    image: `https://images.unsplash.com/photo-${imageIds[index % imageIds.length]}?w=800&q=80`,
-    title: serviceNames[index],
-    price: `Rp ${basePrice},000`,
-    duration: durationStr,
-    popular: popular,
-  };
-});
+import Pagination from "../components/Pagination";
 
 export default function Services() {
-  const [services, setServices] = useState(initialServices);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef(null);
 
@@ -81,9 +52,28 @@ export default function Services() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("services").select("*");
+      if (error) throw error;
+      const sorted = (data || []).sort((a, b) => a.id - b.id);
+      setServices(sorted);
+    } catch (err) {
+      console.error("Error fetching services:", err);
+      showToast("Gagal mengambil data layanan!", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
   // SEARCH FILTER
   const filteredServices = services.filter((service) =>
-    service.title.toLowerCase().includes(search.toLowerCase())
+    (service.title || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // PAGINATION LOGIC
@@ -97,7 +87,7 @@ export default function Services() {
   }, [search]);
 
   // CREATE
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.title || !formData.price || !formData.duration || !formData.image) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
@@ -109,15 +99,25 @@ export default function Services() {
     }
 
     const newService = {
-      ...formData,
-      id: Date.now(),
+      title: formData.title,
       price: priceFormatted,
+      duration: formData.duration,
+      image: formData.image,
+      popular: formData.popular || false,
     };
 
-    setServices([newService, ...services]);
-    setFormData(emptyForm);
-    setShowCreateModal(false);
-    showToast("Layanan baru berhasil ditambahkan!");
+    try {
+      const { error } = await supabase.from("services").insert([newService]);
+      if (error) throw error;
+
+      setFormData(emptyForm);
+      setShowCreateModal(false);
+      showToast("Layanan baru berhasil ditambahkan!");
+      fetchServices();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menambahkan layanan!", "error");
+    }
   };
 
   // EDIT
@@ -128,7 +128,7 @@ export default function Services() {
   };
 
   // UPDATE
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!formData.title || !formData.price || !formData.duration || !formData.image) {
       showToast("Tolong lengkapi semua field wajib!", "error");
       return;
@@ -139,13 +139,24 @@ export default function Services() {
       priceFormatted = `Rp ${priceFormatted}`;
     }
 
-    const updated = services.map((service) =>
-      service.id === selectedService.id ? { ...formData, price: priceFormatted } : service
-    );
+    try {
+      const { error } = await supabase.from("services").update({
+        title: formData.title,
+        price: priceFormatted,
+        duration: formData.duration,
+        image: formData.image,
+        popular: formData.popular || false,
+      }).eq("id", selectedService.id);
 
-    setServices(updated);
-    setShowEditModal(false);
-    showToast(`Layanan "${formData.title}" berhasil diperbarui!`);
+      if (error) throw error;
+
+      setShowEditModal(false);
+      showToast(`Layanan "${formData.title}" berhasil diperbarui!`);
+      fetchServices();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memperbarui layanan!", "error");
+    }
   };
 
   // DELETE
@@ -154,15 +165,22 @@ export default function Services() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const filtered = services.filter((service) => service.id !== selectedService.id);
-    setServices(filtered);
-    setShowDeleteModal(false);
-    showToast(`Layanan "${selectedService.title}" berhasil dihapus!`);
-    
-    // Adjust pagination if needed
-    if (paginatedServices.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from("services").delete().eq("id", selectedService.id);
+      if (error) throw error;
+
+      setShowDeleteModal(false);
+      showToast(`Layanan "${selectedService.title}" berhasil dihapus!`);
+      fetchServices();
+      
+      // Adjust pagination if needed
+      if (paginatedServices.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menghapus layanan!", "error");
     }
   };
 
@@ -307,55 +325,11 @@ export default function Services() {
       )}
 
       {/* PAGINATION CONTROLS */}
-      {totalPages > 1 && (
-        <div className="mt-auto flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500 font-medium">
-            Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredServices.length)}</span> dari <span className="font-bold text-gray-900">{filteredServices.length}</span> layanan
-          </p>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1;
-                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                        currentPage === page
-                          ? "bg-amber-500 text-slate-950 shadow-md"
-                          : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 shadow-sm"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} className="px-1 text-gray-400 font-bold">...</span>;
-                }
-                return null;
-              })}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700 shadow-sm"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* MODAL: CREATE / EDIT */}
       {(showCreateModal || showEditModal) && (

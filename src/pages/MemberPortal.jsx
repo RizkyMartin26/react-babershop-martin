@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../supabase";
 import {
   LayoutDashboard,
   CreditCard,
@@ -80,6 +81,91 @@ export default function MemberPortal() {
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [member, setMember] = useState({
+    name: "Rizky Martin",
+    level: "Gold Member",
+    id: "MBR001",
+    points: 850,
+    visits: 18,
+    activeVouchers: 3,
+    email: "rizky.martin@example.com",
+    phone: "081234567890",
+    dob: "1995-08-15",
+    address: "Jl. Sudirman No. 123, Jakarta"
+  });
+
+  const loadMember = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: dbUser } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        let memberDetails = {
+          name: dbUser?.name || user.user_metadata?.name || "Member",
+          email: dbUser?.email || user.email,
+          phone: dbUser?.phone || user.user_metadata?.phone || "",
+          level: "Bronze Member",
+          id: "MBR999",
+          points: 0,
+          visits: 0,
+          activeVouchers: 3,
+          dob: "1995-08-15",
+          address: "Jakarta, Indonesia"
+        };
+
+        // Try to fetch from members table using the name
+        const { data: dbMember } = await supabase
+          .from("members")
+          .select("*")
+          .eq("name", memberDetails.name)
+          .single();
+
+        if (dbMember) {
+          memberDetails = {
+            ...memberDetails,
+            id: dbMember.id,
+            level: `${dbMember.level} Member`,
+            points: dbMember.points || 0,
+            visits: dbMember.visits || 0
+          };
+        }
+
+        setMember(memberDetails);
+      }
+    } catch (err) {
+      console.error("Error loading member profile:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadMember();
+  }, []);
+
+  const handleUpdateProfile = async (updatedData) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Update auth metadata
+        await supabase.auth.updateUser({
+          data: { name: updatedData.name, phone: updatedData.phone }
+        });
+
+        // Update public.users
+        await supabase.from("users").update({
+          name: updatedData.name,
+          phone: updatedData.phone
+        }).eq("id", user.id);
+
+        loadMember();
+      }
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
+  };
 
   const menus = [
     { id: "dashboard", label: "Dashboard Member", icon: LayoutDashboard },
@@ -94,17 +180,18 @@ export default function MemberPortal() {
     { id: "profil", label: "Profil Saya", icon: User },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("mock_session_active");
+    await supabase.auth.signOut();
     navigate("/");
   };
 
   const renderContent = () => {
     switch (activeMenu) {
       case "dashboard":
-        return <DashboardView />;
+        return <DashboardView member={member} />;
       case "card":
-        return <CardView />;
+        return <CardView member={member} />;
       case "booking":
         return <BookingView />;
       case "riwayat_booking":
@@ -120,9 +207,9 @@ export default function MemberPortal() {
       case "feedback":
         return <FeedbackView />;
       case "profil":
-        return <ProfileView />;
+        return <ProfileView member={member} onUpdate={handleUpdateProfile} />;
       default:
-        return <DashboardView />;
+        return <DashboardView member={member} />;
     }
   };
 
@@ -198,30 +285,30 @@ export default function MemberPortal() {
 /* ====================================================================
    1. Dashboard Member
 ==================================================================== */
-function DashboardView() {
+function DashboardView({ member }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Halo {memberData.name} 👋</h2>
+      <h2 className="text-2xl font-bold">Halo {member?.name} 👋</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-6 rounded-2xl text-slate-950 shadow-lg relative overflow-hidden">
           <CrownBg />
           <div className="relative z-10">
             <p className="text-slate-900 font-medium mb-1">Membership</p>
-            <h3 className="text-2xl font-black">{memberData.level}</h3>
+            <h3 className="text-2xl font-black">{member?.level}</h3>
           </div>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow">
           <p className="text-slate-400 font-medium mb-1">Total Poin</p>
-          <h3 className="text-3xl font-black text-amber-500">{memberData.points}</h3>
+          <h3 className="text-3xl font-black text-amber-500">{member?.points}</h3>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow">
           <p className="text-slate-400 font-medium mb-1">Total Visit</p>
-          <h3 className="text-3xl font-black text-white">{memberData.visits}</h3>
+          <h3 className="text-3xl font-black text-white">{member?.visits}</h3>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow">
           <p className="text-slate-400 font-medium mb-1">Voucher Aktif</p>
-          <h3 className="text-3xl font-black text-emerald-500">{memberData.activeVouchers}</h3>
+          <h3 className="text-3xl font-black text-emerald-500">{member?.activeVouchers}</h3>
         </div>
       </div>
 
@@ -269,7 +356,8 @@ function CrownBg() {
 /* ====================================================================
    2. Membership Card
 ==================================================================== */
-function CardView() {
+function CardView({ member }) {
+  const displayMember = member || {};
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-6">Membership Card</h2>
@@ -289,26 +377,26 @@ function CardView() {
               <h3 className="text-xl font-black text-white mt-4 tracking-widest">MEMBER CARD</h3>
             </div>
             <div className="px-3 py-1 bg-gradient-to-r from-amber-400 to-amber-600 rounded-full text-slate-950 font-bold text-xs uppercase shadow-md tracking-wider">
-              {memberData.level}
+              {displayMember.level}
             </div>
           </div>
 
           <div className="relative z-10 flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl bg-slate-800 border-2 border-amber-500/50 overflow-hidden shrink-0">
-              <img src="https://ui-avatars.com/api/?name=Rizky+Martin&background=f59e0b&color=0f172a&size=150" alt="Profile" className="w-full h-full object-cover" />
+              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(displayMember.name || 'Member')}&background=f59e0b&color=0f172a&size=150`} alt="Profile" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Nama Member</p>
-              <p className="font-bold text-xl text-white mb-3 tracking-wide">{memberData.name}</p>
+              <p className="font-bold text-xl text-white mb-3 tracking-wide">{displayMember.name}</p>
               
               <div className="flex gap-6">
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">ID</p>
-                  <p className="font-mono text-amber-400 font-semibold">{memberData.id}</p>
+                  <p className="font-mono text-amber-400 font-semibold">{displayMember.id || "MBR000"}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Point</p>
-                  <p className="font-bold text-emerald-400 font-mono">{memberData.points}</p>
+                  <p className="font-bold text-emerald-400 font-mono">{displayMember.points || 0}</p>
                 </div>
               </div>
             </div>
@@ -317,7 +405,7 @@ function CardView() {
           {/* Fake QR Code */}
           <div className="relative z-10 mt-8 flex justify-center">
             <div className="p-3 bg-white rounded-2xl shadow-lg">
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${memberData.id}`} alt="QR Code" className="w-24 h-24" />
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${displayMember.id || 'MBR000'}`} alt="QR Code" className="w-24 h-24" />
             </div>
           </div>
         </div>
@@ -683,8 +771,24 @@ function FeedbackView() {
 /* ====================================================================
    10. Profil Saya
 ==================================================================== */
-function ProfileView() {
+function ProfileView({ member, onUpdate }) {
   const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(member?.name || "");
+  const [phone, setPhone] = useState(member?.phone || "");
+  const [dob, setDob] = useState(member?.dob || "");
+  const [address, setAddress] = useState(member?.address || "");
+
+  useEffect(() => {
+    setName(member?.name || "");
+    setPhone(member?.phone || "");
+    setDob(member?.dob || "");
+    setAddress(member?.address || "");
+  }, [member]);
+
+  const handleSave = () => {
+    onUpdate({ name, phone, dob, address });
+    setEditing(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -695,64 +799,60 @@ function ProfileView() {
           
           <div className="flex flex-col items-center gap-4 shrink-0 w-full lg:w-auto">
             <div className="w-40 h-40 rounded-full border-4 border-amber-500/30 overflow-hidden relative group cursor-pointer shadow-xl">
-              <img src="https://ui-avatars.com/api/?name=Rizky+Martin&background=f59e0b&color=0f172a&size=200" alt="Profile" className="w-full h-full object-cover" />
+              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f59e0b&color=0f172a&size=200`} alt="Profile" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-slate-950/60 hidden group-hover:flex flex-col items-center justify-center transition backdrop-blur-sm">
                 <User className="w-8 h-8 text-white mb-2" />
                 <span className="text-white text-xs font-bold uppercase tracking-wider">Ubah Foto</span>
               </div>
             </div>
-            {!editing && <div className="px-4 py-1.5 bg-amber-500/10 text-amber-500 rounded-full text-xs font-bold uppercase tracking-wider border border-amber-500/20">{memberData.level}</div>}
+            {!editing && <div className="px-4 py-1.5 bg-amber-500/10 text-amber-500 rounded-full text-xs font-bold uppercase tracking-wider border border-amber-500/20">{member?.level}</div>}
           </div>
-
+ 
           <div className="flex-1 w-full space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-semibold">Nama Lengkap</label>
                 {editing ? (
-                  <input type="text" defaultValue={memberData.name} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" />
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" />
                 ) : (
-                  <p className="text-white font-semibold py-3 text-lg">{memberData.name}</p>
+                  <p className="text-white font-semibold py-3 text-lg">{member?.name}</p>
                 )}
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-semibold">Email</label>
-                {editing ? (
-                  <input type="email" defaultValue={memberData.email} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" />
-                ) : (
-                  <p className="text-white font-semibold py-3 text-lg">{memberData.email}</p>
-                )}
+                <p className="text-white font-semibold py-3 text-lg">{member?.email}</p>
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-semibold">Nomor HP</label>
                 {editing ? (
-                  <input type="text" defaultValue={memberData.phone} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" />
+                  <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" />
                 ) : (
-                  <p className="text-white font-semibold py-3 text-lg">{memberData.phone}</p>
+                  <p className="text-white font-semibold py-3 text-lg">{member?.phone || "-"}</p>
                 )}
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-semibold">Tanggal Lahir</label>
                 {editing ? (
-                  <input type="date" defaultValue={memberData.dob} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" style={{colorScheme: 'dark'}} />
+                  <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition" style={{colorScheme: 'dark'}} />
                 ) : (
-                  <p className="text-white font-semibold py-3 text-lg">{new Date(memberData.dob).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                  <p className="text-white font-semibold py-3 text-lg">{dob ? new Date(dob).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : "-"}</p>
                 )}
               </div>
             </div>
-
+ 
             <div>
               <label className="block text-xs uppercase tracking-widest text-slate-500 mb-2 font-semibold">Alamat Lengkap</label>
               {editing ? (
-                <textarea rows="3" defaultValue={memberData.address} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition resize-none"></textarea>
+                <textarea rows="3" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:outline-none transition resize-none"></textarea>
               ) : (
-                <p className="text-white font-semibold py-3 text-lg">{memberData.address}</p>
+                <p className="text-white font-semibold py-3 text-lg">{member?.address}</p>
               )}
             </div>
-
+ 
             <div className="pt-8 border-t border-slate-800 flex flex-wrap gap-4">
               {editing ? (
                 <>
-                  <button onClick={() => setEditing(false)} className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold rounded-xl hover:scale-105 transition shadow-lg">
+                  <button onClick={handleSave} className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold rounded-xl hover:scale-105 transition shadow-lg">
                     Simpan Perubahan
                   </button>
                   <button onClick={() => setEditing(false)} className="px-8 py-3.5 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition">
@@ -764,13 +864,13 @@ function ProfileView() {
                   <button onClick={() => setEditing(true)} className="px-8 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition border border-slate-700">
                     Edit Profil
                   </button>
-                  <button onClick={() => alert('Email reset password telah dikirim ke rizky.martin@example.com')} className="px-8 py-3.5 text-amber-500 font-bold rounded-xl hover:bg-amber-500/10 transition border border-transparent hover:border-amber-500/20">
+                  <button onClick={() => alert(`Email reset password telah dikirim ke ${member?.email}`)} className="px-8 py-3.5 text-amber-500 font-bold rounded-xl hover:bg-amber-500/10 transition border border-transparent hover:border-amber-500/20">
                     Ubah Password
                   </button>
                 </>
               )}
             </div>
-
+ 
           </div>
         </div>
       </div>

@@ -10,13 +10,18 @@ import {
   Smartphone,
   Trash2,
   CheckCircle2,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 export default function Campaigns() {
   const [targetSegment, setTargetSegment] = useState('Semua Customer');
   const [promoMessage, setPromoMessage] = useState('');
   const [selectedChannel, setSelectedChannel] = useState('WhatsApp');
+  
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const campaigns = [
     {
@@ -57,6 +62,43 @@ export default function Campaigns() {
     }
   ];
 
+  const handleBuatCampaign = () => {
+    alert("Navigasi: Fitur ini akan membuka halaman atau modal form untuk membuat Campaign baru. (Dapat diimplementasikan lebih lanjut nanti)");
+  };
+
+  const handleKirimBroadcast = () => {
+    if (!promoMessage.trim()) {
+      setErrorMsg("Silakan isi pesan promosi terlebih dahulu!");
+      setTimeout(() => setErrorMsg(''), 3000);
+      return;
+    }
+    
+    setSuccessData({
+      channel: selectedChannel,
+      target: targetSegment,
+      message: promoMessage
+    });
+    setShowSuccessModal(true);
+    setPromoMessage(''); // Reset pesan setelah dikirim
+  };
+
+  const handleDeleteCampaign = (title) => {
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus campaign "${title}"?`);
+    if (confirmDelete) {
+      alert(`Campaign "${title}" berhasil dihapus dari daftar.`);
+    }
+  };
+
+  const getChannelStyle = (channelName, isSelected) => {
+    if (!isSelected) return 'border-gray-200 text-gray-500 hover:bg-gray-50';
+    switch (channelName) {
+      case 'WhatsApp': return 'border-amber-500 bg-amber-50 text-amber-600 shadow-sm';
+      case 'Email': return 'border-orange-500 bg-orange-50 text-orange-600 shadow-sm';
+      case 'SMS': return 'border-slate-500 bg-slate-50 text-slate-600 shadow-sm';
+      default: return 'border-amber-500 bg-amber-50 text-amber-600 shadow-sm';
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -69,7 +111,10 @@ export default function Campaigns() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">4 campaigns terdaftar · 3 aktif</p>
         </div>
-        <button className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+        <button 
+          onClick={handleBuatCampaign}
+          className="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
+        >
           <Plus className="w-4 h-4" /> Buat Campaign
         </button>
       </div>
@@ -119,7 +164,13 @@ export default function Campaigns() {
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${camp.status === 'Aktif' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                       {camp.status}
                     </span>
-                    <button className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <button 
+                      onClick={() => handleDeleteCampaign(camp.title)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      title="Hapus Campaign"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
                 <h3 className="font-bold text-slate-800 mb-4 h-10">{camp.title}</h3>
@@ -165,18 +216,14 @@ export default function Campaigns() {
               <label className="block text-xs font-bold text-gray-500 uppercase mb-3">Saluran Media</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { name: 'WhatsApp', icon: MessageCircle, color: 'amber' },
-                  { name: 'Email', icon: Mail, color: 'orange' },
-                  { name: 'SMS', icon: Smartphone, color: 'slate' }
+                  { name: 'WhatsApp', icon: MessageCircle },
+                  { name: 'Email', icon: Mail },
+                  { name: 'SMS', icon: Smartphone }
                 ].map(ch => (
                   <button 
                     key={ch.name}
                     onClick={() => setSelectedChannel(ch.name)}
-                    className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                      selectedChannel === ch.name 
-                        ? `border-${ch.color}-500 bg-${ch.color}-50 text-${ch.color}-600 shadow-sm`
-                        : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                    }`}
+                    className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${getChannelStyle(ch.name, selectedChannel === ch.name)}`}
                   >
                     {selectedChannel === ch.name && <CheckCircle2 className="w-4 h-4" />}
                     {ch.name}
@@ -239,12 +286,77 @@ export default function Campaigns() {
             </div>
           </div>
 
-          <button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-900 py-3.5 rounded-xl font-bold text-sm shadow-md mt-6 flex justify-center items-center gap-2 transition-all">
+          <button 
+            onClick={handleKirimBroadcast}
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-900 py-3.5 rounded-xl font-bold text-sm shadow-md mt-6 flex justify-center items-center gap-2 transition-all"
+          >
             Kirim Broadcast Sekarang
           </button>
         </div>
 
       </div>
+
+      {/* Toast Notification for Errors */}
+      {errorMsg && (
+        <div className="fixed top-6 right-6 z-[70] bg-red-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-red-400">
+          <div className="bg-white/20 p-1.5 rounded-full"><AlertCircle className="w-5 h-5 text-white" /></div>
+          <span className="font-semibold text-sm">{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && successData && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-8 flex flex-col items-center justify-center text-white relative">
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+              </div>
+              <div className="bg-white/20 p-3 rounded-full mb-4 relative z-10 backdrop-blur-md shadow-inner">
+                <CheckCircle2 className="w-12 h-12 text-white" />
+              </div>
+              <h3 className="text-2xl font-black relative z-10 tracking-tight text-white">Broadcast Berhasil!</h3>
+              <p className="text-emerald-50 text-sm mt-2 text-center relative z-10 font-medium">Promosi Anda telah masuk antrean pengiriman.</p>
+            </div>
+            
+            <div className="p-8 space-y-5">
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4 text-sm shadow-inner">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Saluran</span>
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm">
+                    {successData.channel === 'WhatsApp' && <MessageCircle className="w-4 h-4 text-emerald-500" />}
+                    {successData.channel === 'Email' && <Mail className="w-4 h-4 text-blue-500" />}
+                    {successData.channel === 'SMS' && <Smartphone className="w-4 h-4 text-slate-600" />}
+                    {successData.channel}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Target</span>
+                  <span className="font-bold text-slate-800 truncate max-w-[180px] text-right" title={successData.target}>{successData.target}</span>
+                </div>
+                <div className="pt-1">
+                  <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px] block mb-2">Pesan Promosi:</span>
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 text-slate-700 italic line-clamp-4 shadow-sm text-sm">
+                    "{successData.message}"
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-[11px] text-center text-slate-400 font-medium">
+                (Aksi ini siap dihubungkan ke API/Backend nantinya)
+              </p>
+
+              <button 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-slate-200/50 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+              >
+                Tutup Modal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { supabase } from "../supabase";
+import Pagination from "../components/Pagination";
 
 import {
   Plus,
@@ -15,30 +17,9 @@ import {
   AlertCircle
 } from "lucide-react";
 
-// --- 30 DUMMY DATA ---
-const initialCustomers = Array.from({ length: 30 }).map((_, index) => {
-  const firstNames = ["John", "Michael", "David", "Ryan", "Chris", "Kevin", "James", "Robert", "William", "Joseph", "Daniel", "Matthew", "Anthony", "Mark", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Brian"];
-  const lastNames = ["Doe", "Smith", "Beckham", "Reynolds", "Evans", "Hart", "Bond", "Stark", "Wayne", "Kent", "Parker", "Banner", "Odinson", "Rogers", "Barton", "Romanoff", "Fury", "Hill", "Coulson", "Carter"];
-  
-  const fName = firstNames[index % firstNames.length];
-  const lName = lastNames[(index * 3) % lastNames.length];
-  const visits = Math.floor(Math.random() * 40) + 1;
-  const status = visits > 15 ? "VIP" : "Regular";
-  const phoneEnd = String(1000 + index * 111).padStart(4, '0');
-
-  return {
-    id: index + 1,
-    name: `${fName} ${lName}`,
-    email: `${fName.toLowerCase()}.${lName.toLowerCase()}@example.com`,
-    phone: `+62 812-${String(100 + index).padStart(4, '0')}-${phoneEnd}`,
-    visits: visits,
-    status: status,
-    initials: `${fName[0]}${lName[0]}`,
-  };
-});
-
 export default function Customers() {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const searchRef = useRef(null);
 
@@ -71,10 +52,31 @@ export default function Customers() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
+  // LOAD DATA FROM SUPABASE
+  const fetchCustomers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("customers").select("*");
+      if (error) throw error;
+      // Sort so that newly added items (usually with higher IDs) are at the top
+      const sorted = (data || []).sort((a, b) => b.id - a.id);
+      setCustomers(sorted);
+    } catch (err) {
+      console.error("Error fetching customers:", err);
+      showToast("Gagal mengambil data pelanggan!", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
   // SEARCH FILTER
   const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(search.toLowerCase()) ||
-    customer.email.toLowerCase().includes(search.toLowerCase())
+    (customer.name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (customer.email || "").toLowerCase().includes(search.toLowerCase())
   );
 
   // PAGINATION LOGIC
@@ -88,7 +90,7 @@ export default function Customers() {
   }, [search]);
 
   // CREATE
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
       showToast("Tolong lengkapi semua data wajib!", "error");
       return;
@@ -100,16 +102,26 @@ export default function Customers() {
       : formData.name.substring(0, 2).toUpperCase();
 
     const newCustomer = {
-      ...formData,
-      id: Date.now(), // Unique ID
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
       visits: parseInt(formData.visits) || 0,
+      status: formData.status || "Regular",
       initials,
     };
 
-    setCustomers([newCustomer, ...customers]);
-    setFormData(emptyForm);
-    setShowCreateModal(false);
-    showToast("Pelanggan baru berhasil ditambahkan!");
+    try {
+      const { error } = await supabase.from("customers").insert([newCustomer]);
+      if (error) throw error;
+
+      setFormData(emptyForm);
+      setShowCreateModal(false);
+      showToast("Pelanggan baru berhasil ditambahkan!");
+      fetchCustomers();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menambahkan pelanggan!", "error");
+    }
   };
 
   // EDIT
@@ -120,7 +132,7 @@ export default function Customers() {
   };
 
   // UPDATE
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
       showToast("Tolong lengkapi semua data wajib!", "error");
       return;
@@ -131,15 +143,25 @@ export default function Customers() {
       ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
       : formData.name.substring(0, 2).toUpperCase();
 
-    const updated = customers.map((customer) =>
-      customer.id === selectedCustomer.id
-        ? { ...formData, initials, visits: parseInt(formData.visits) || 0 }
-        : customer
-    );
+    try {
+      const { error } = await supabase.from("customers").update({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        visits: parseInt(formData.visits) || 0,
+        status: formData.status || "Regular",
+        initials,
+      }).eq("id", selectedCustomer.id);
 
-    setCustomers(updated);
-    setShowEditModal(false);
-    showToast("Data pelanggan berhasil diperbarui!");
+      if (error) throw error;
+
+      setShowEditModal(false);
+      showToast("Data pelanggan berhasil diperbarui!");
+      fetchCustomers();
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memperbarui data pelanggan!", "error");
+    }
   };
 
   // DELETE
@@ -148,17 +170,22 @@ export default function Customers() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    const filtered = customers.filter(
-      (customer) => customer.id !== selectedCustomer.id
-    );
-    setCustomers(filtered);
-    setShowDeleteModal(false);
-    showToast("Pelanggan berhasil dihapus!");
-    
-    // Adjust pagination if needed
-    if (paginatedCustomers.length === 1 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+  const confirmDelete = async () => {
+    try {
+      const { error } = await supabase.from("customers").delete().eq("id", selectedCustomer.id);
+      if (error) throw error;
+
+      setShowDeleteModal(false);
+      showToast("Pelanggan berhasil dihapus!");
+      fetchCustomers();
+      
+      // Adjust pagination if needed
+      if (paginatedCustomers.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal menghapus pelanggan!", "error");
     }
   };
 
@@ -293,63 +320,11 @@ export default function Customers() {
       )}
 
       {/* PAGINATION */}
-      {totalPages > 1 && (
-        <div className="mt-auto pt-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-200">
-          <p className="text-sm text-gray-500 font-medium">
-            Menampilkan <span className="font-bold text-gray-900">{startIndex + 1}</span> hingga <span className="font-bold text-gray-900">{Math.min(startIndex + itemsPerPage, filteredCustomers.length)}</span> dari <span className="font-bold text-gray-900">{filteredCustomers.length}</span> pelanggan
-          </p>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }).map((_, idx) => {
-                const page = idx + 1;
-                // Simple pagination logic to avoid too many buttons
-                if (
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                ) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
-                        currentPage === page
-                          ? "bg-amber-500 text-slate-950 shadow-md"
-                          : "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (
-                  page === currentPage - 2 ||
-                  page === currentPage + 2
-                ) {
-                  return <span key={page} className="px-1 text-gray-400">...</span>;
-                }
-                return null;
-              })}
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-300 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-gray-700"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
 
       {/* MODAL: CREATE / EDIT */}
       {(showCreateModal || showEditModal) && (

@@ -48,6 +48,10 @@ export default function Booking() {
     status: "Pending",
   };
 
+  const barbers = ["Budi (Master Barber)", "Rudi (Senior Barber)", "Any Barber (Tersedia)"];
+  const services = ["Haircut Premium", "Hair & Beard Trim", "Full Grooming Package"];
+  const statuses = ["Pending", "Confirmed", "Completed", "Cancelled"];
+
   const [formData, setFormData] = useState(emptyForm);
 
   // Toast Helper
